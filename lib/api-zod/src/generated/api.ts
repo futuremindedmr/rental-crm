@@ -345,6 +345,7 @@ export const ListRentalsResponseItem = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListRentalsResponse = zod.array(ListRentalsResponseItem)
@@ -386,6 +387,7 @@ export const GetRentalResponse = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -421,6 +423,7 @@ export const UpdateRentalResponse = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "notes": zod.string().nullish(),
+  "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

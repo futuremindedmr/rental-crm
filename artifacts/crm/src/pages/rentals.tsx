@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useListRentals, useCreateRental } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListClients } from "@workspace/api-client-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const newRentalSchema = z.object({
   clientId: z.coerce.number().min(1, "Client is required"),
@@ -23,15 +24,30 @@ const newRentalSchema = z.object({
   monthlyRate: z.coerce.number().min(0, "Rate must be positive")
 });
 
+function PaymentStatusBadge({ status }: { status: string | null | undefined }) {
+  if (!status) return <span className="text-muted-foreground text-xs">—</span>;
+  switch (status) {
+    case "paid":
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Paid</Badge>;
+    case "late":
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">Late</Badge>;
+    case "overdue":
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Overdue</Badge>;
+    default:
+      return <span className="text-muted-foreground text-xs">—</span>;
+  }
+}
+
 export default function Rentals() {
   const [filter, setFilter] = useState<"all" | "expiring">("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: rentals, isLoading } = useListRentals({ 
-    expiringSoon: filter === "expiring" ? true : undefined 
+  const { data: rentals, isLoading } = useListRentals({
+    expiringSoon: filter === "expiring" ? true : undefined
   });
-  
+
   const { data: clients } = useListClients({});
 
   const createRentalMutation = useCreateRental();
@@ -54,6 +70,12 @@ export default function Rentals() {
       }
     });
   };
+
+  const filteredRentals = useMemo(() => {
+    if (!rentals) return [];
+    if (paymentFilter === "all") return rentals;
+    return rentals.filter((r) => r.paymentStatus === paymentFilter);
+  }, [rentals, paymentFilter]);
 
   return (
     <div className="space-y-6">
@@ -110,13 +132,25 @@ export default function Rentals() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as "all"|"expiring")} className="w-full max-w-md">
+      <div className="flex items-center gap-4 flex-wrap">
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "expiring")}>
           <TabsList>
             <TabsTrigger value="all">All Rentals</TabsTrigger>
             <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Payment Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="late">Late</SelectItem>
+            <SelectItem value="overdue">Overdue</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-md border bg-card">
@@ -128,25 +162,30 @@ export default function Rentals() {
               <TableHead>Start Date</TableHead>
               <TableHead>Term</TableHead>
               <TableHead>Remaining</TableHead>
-              <TableHead className="text-right">Rate/mo</TableHead>
+              <TableHead className="text-right">Monthly Rent</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center py-8">Loading...</TableCell>
               </TableRow>
-            ) : rentals?.length === 0 ? (
+            ) : filteredRentals.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground border-dashed border">
+                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                   No rentals found.
                 </TableCell>
               </TableRow>
             ) : (
-              rentals?.map((rental) => (
-                <TableRow 
-                  key={rental.id} 
-                  className="cursor-pointer hover:bg-muted/50"
+              filteredRentals.map((rental) => (
+                <TableRow
+                  key={rental.id}
+                  className={cn(
+                    "cursor-pointer hover:bg-muted/50",
+                    rental.isExpiringSoon && "bg-orange-50 hover:bg-orange-100/60"
+                  )}
                   onClick={() => setLocation(`/clients/${rental.clientId}`)}
                 >
                   <TableCell className="font-medium">{rental.clientName}</TableCell>
@@ -156,8 +195,8 @@ export default function Rentals() {
                   </TableCell>
                   <TableCell>{rental.termMonths} mo</TableCell>
                   <TableCell>
-                    {rental.monthsRemaining <= 2 ? (
-                      <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
+                    {rental.isExpiringSoon ? (
+                      <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
                         {rental.monthsRemaining} mo
                       </Badge>
                     ) : (
@@ -166,6 +205,12 @@ export default function Rentals() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     ${rental.monthlyRate?.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <PaymentStatusBadge status={rental.paymentStatus} />
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                    {rental.notes || <span className="text-muted-foreground/50">—</span>}
                   </TableCell>
                 </TableRow>
               ))

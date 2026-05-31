@@ -194,6 +194,8 @@ export interface Rental {
   isExpiringSoon: boolean;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  paymentStatus?: string | null;
   createdAt: string;
 }
 

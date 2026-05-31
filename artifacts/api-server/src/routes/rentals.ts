@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { rentalsTable, clientsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { rentalsTable, clientsTable, squareInvoicesTable } from "@workspace/db";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import {
   ListRentalsQueryParams,
   CreateRentalBody,
@@ -22,25 +22,88 @@ function computeMonthsRemaining(startDate: string, termMonths: number): number {
   return Math.max(0, termMonths - monthsElapsed);
 }
 
-function formatRental(row: {
-  id: number;
-  clientId: number;
-  clientName: string | null;
-  unitDescription: string | null;
-  startDate: string;
-  termMonths: number;
-  monthlyRate: string;
-  notes: string | null;
-  createdAt: Date;
-}) {
+function computeDaysRemaining(startDate: string, termMonths: number): number {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + termMonths);
+  const now = new Date();
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function formatRental(
+  row: {
+    id: number;
+    clientId: number;
+    clientName: string | null;
+    unitDescription: string | null;
+    startDate: string;
+    termMonths: number;
+    monthlyRate: string;
+    notes: string | null;
+    createdAt: Date;
+  },
+  paymentStatus: string | null = null,
+) {
   const monthsRemaining = computeMonthsRemaining(row.startDate, row.termMonths);
+  const daysRemaining = computeDaysRemaining(row.startDate, row.termMonths);
   return {
     ...row,
     monthlyRate: Number(row.monthlyRate),
     monthsRemaining,
-    isExpiringSoon: monthsRemaining <= 2 && monthsRemaining > 0,
+    isExpiringSoon: daysRemaining <= 60 && daysRemaining > 0,
     createdAt: row.createdAt.toISOString(),
+    paymentStatus,
   };
+}
+
+async function fetchPaymentStatusMap(
+  clientIds: number[],
+  tenantId: number,
+): Promise<Map<number, string>> {
+  if (clientIds.length === 0) return new Map();
+
+  const today = new Date();
+  const invoices = await db
+    .select({
+      clientId: squareInvoicesTable.clientId,
+      status: squareInvoicesTable.status,
+      dueDate: squareInvoicesTable.dueDate,
+    })
+    .from(squareInvoicesTable)
+    .where(
+      and(
+        eq(squareInvoicesTable.tenantId, tenantId),
+        inArray(squareInvoicesTable.clientId, clientIds),
+      ),
+    );
+
+  const byClient = new Map<number, typeof invoices>();
+  for (const inv of invoices) {
+    if (inv.clientId == null) continue;
+    if (!byClient.has(inv.clientId)) byClient.set(inv.clientId, []);
+    byClient.get(inv.clientId)!.push(inv);
+  }
+
+  const result = new Map<number, string>();
+  for (const [cid, invs] of byClient) {
+    const sorted = [...invs].sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    });
+    const latest = sorted[0];
+    if (!latest) continue;
+    if (latest.status === "PAID") {
+      result.set(cid, "paid");
+    } else if (latest.status === "UNPAID" || latest.status === "PARTIALLY_PAID") {
+      const daysPast = latest.dueDate
+        ? Math.floor((today.getTime() - new Date(latest.dueDate).getTime()) / 86400000)
+        : 0;
+      result.set(cid, daysPast > 30 ? "overdue" : "late");
+    }
+  }
+  return result;
 }
 
 router.get("/rentals", async (req, res) => {
@@ -71,9 +134,12 @@ router.get("/rentals", async (req, res) => {
     .where(and(...conditions))
     .orderBy(sql`${rentalsTable.createdAt} desc`);
 
-  let result = rows.map(formatRental);
-  if (expiringSoon === true || expiringSoon === "true" as unknown) {
-    result = result.filter(r => r.isExpiringSoon);
+  const clientIds = [...new Set(rows.map((r) => r.clientId))];
+  const paymentStatusMap = await fetchPaymentStatusMap(clientIds, tenantId);
+
+  let result = rows.map((r) => formatRental(r, paymentStatusMap.get(r.clientId) ?? null));
+  if (expiringSoon === true || (expiringSoon as unknown) === "true") {
+    result = result.filter((r) => r.isExpiringSoon);
   }
 
   res.json(result);
@@ -122,7 +188,9 @@ router.get("/rentals/:id", async (req, res) => {
     .limit(1);
 
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
-  res.json(formatRental(row));
+
+  const paymentStatusMap = await fetchPaymentStatusMap([row.clientId], tenantId);
+  res.json(formatRental(row, paymentStatusMap.get(row.clientId) ?? null));
 });
 
 router.patch("/rentals/:id", async (req, res) => {
@@ -145,8 +213,12 @@ router.patch("/rentals/:id", async (req, res) => {
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
 
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, updated.clientId)).limit(1);
+  const paymentStatusMap = await fetchPaymentStatusMap([updated.clientId], tenantId);
 
-  res.json(formatRental({ ...updated, clientName: client?.name ?? null }));
+  res.json(formatRental(
+    { ...updated, clientName: client?.name ?? null },
+    paymentStatusMap.get(updated.clientId) ?? null,
+  ));
 });
 
 router.delete("/rentals/:id", async (req, res) => {

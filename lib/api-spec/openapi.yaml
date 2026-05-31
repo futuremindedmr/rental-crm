@@ -919,6 +919,8 @@ components:
           type: boolean
         notes:
           type: ["string", "null"]
+        paymentStatus:
+          type: ["string", "null"]
         createdAt:
           type: string
 
