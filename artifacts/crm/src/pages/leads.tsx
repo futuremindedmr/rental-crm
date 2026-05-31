@@ -162,14 +162,14 @@ export default function Leads() {
       </div>
 
       <div className="flex-1 overflow-x-auto min-h-0">
-        <div className="flex gap-4 h-full min-w-max pb-4">
+        <div className="grid grid-cols-5 gap-3 h-full pb-4 min-w-[700px]">
           {stages.map(stage => {
             const columnLeads = groupedLeads[stage.id] || [];
             
             return (
               <div 
                 key={stage.id} 
-                className="w-80 flex flex-col bg-muted/40 rounded-xl p-3"
+                className="min-w-0 flex flex-col bg-muted/40 rounded-xl p-3"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage.id)}
               >
