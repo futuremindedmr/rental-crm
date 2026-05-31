@@ -10,7 +10,9 @@ export interface DashboardStats {
   activeRentals: number;
   expiringSoon: number;
   openLeads: number;
-  lastMonthSales: number;
+  rentCollectedThisMonth: number;
+  overduePayments: number;
+  totalProperties: number;
   totalRevenue: number;
   totalClients: number;
 }

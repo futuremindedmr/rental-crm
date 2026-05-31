@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { clientsTable, leadsTable, rentalsTable, squarePaymentsTable } from "@workspace/db";
+import { clientsTable, leadsTable, rentalsTable, squarePaymentsTable, squareInvoicesTable, propertiesTable } from "@workspace/db";
 import { sql, and, eq } from "drizzle-orm";
 import { requireTenant } from "../lib/tenant";
 
@@ -19,14 +19,16 @@ router.get("/dashboard/stats", async (req, res) => {
   if (tenantId === null) return;
 
   const now = new Date();
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
   const [
     [totalClientsRow],
     [openLeadsRow],
     [totalRevenueRow],
-    [lastMonthRow],
+    [thisMonthRow],
+    [overdueRow],
+    [totalPropertiesRow],
     allRentals,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(clientsTable)
@@ -38,8 +40,15 @@ router.get("/dashboard/stats", async (req, res) => {
     db.select({ total: sql<number>`coalesce(sum(amount::numeric), 0)` }).from(squarePaymentsTable)
       .where(and(
         eq(squarePaymentsTable.tenantId, tenantId),
-        sql`status = 'COMPLETED' AND payment_date >= ${startOfLastMonth.toISOString().slice(0,10)} AND payment_date < ${endOfLastMonth.toISOString().slice(0,10)}`,
+        sql`status = 'COMPLETED' AND payment_date >= ${startOfThisMonth.toISOString().slice(0,10)} AND payment_date < ${startOfNextMonth.toISOString().slice(0,10)}`,
       )),
+    db.select({ count: sql<number>`count(*)::int` }).from(squareInvoicesTable)
+      .where(and(
+        eq(squareInvoicesTable.tenantId, tenantId),
+        sql`status IN ('UNPAID', 'PARTIALLY_PAID') AND due_date IS NOT NULL AND due_date < ${now.toISOString().slice(0,10)}`,
+      )),
+    db.select({ count: sql<number>`count(*)::int` }).from(propertiesTable)
+      .where(eq(propertiesTable.tenantId, tenantId)),
     db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths }).from(rentalsTable)
       .where(eq(rentalsTable.tenantId, tenantId)),
   ]);
@@ -54,7 +63,9 @@ router.get("/dashboard/stats", async (req, res) => {
     activeRentals: activeRentals.length,
     expiringSoon: expiringSoon.length,
     openLeads: openLeadsRow?.count ?? 0,
-    lastMonthSales: Number(lastMonthRow?.total ?? 0),
+    rentCollectedThisMonth: Number(thisMonthRow?.total ?? 0),
+    overduePayments: overdueRow?.count ?? 0,
+    totalProperties: totalPropertiesRow?.count ?? 0,
     totalRevenue: Number(totalRevenueRow?.total ?? 0),
     totalClients: totalClientsRow?.count ?? 0,
   });

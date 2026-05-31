@@ -537,7 +537,9 @@ export const GetDashboardStatsResponse = zod.object({
   "activeRentals": zod.number(),
   "expiringSoon": zod.number(),
   "openLeads": zod.number(),
-  "lastMonthSales": zod.number(),
+  "rentCollectedThisMonth": zod.number(),
+  "overduePayments": zod.number(),
+  "totalProperties": zod.number(),
   "totalRevenue": zod.number(),
   "totalClients": zod.number()
 })

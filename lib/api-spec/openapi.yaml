@@ -1048,7 +1048,7 @@ components:
     # ── Dashboard ────────────────────────────────────────────────────────────
     DashboardStats:
       type: object
-      required: [activeRentals, expiringSoon, openLeads, lastMonthSales, totalRevenue, totalClients]
+      required: [activeRentals, expiringSoon, openLeads, rentCollectedThisMonth, overduePayments, totalProperties, totalRevenue, totalClients]
       properties:
         activeRentals:
           type: integer
@@ -1056,8 +1056,12 @@ components:
           type: integer
         openLeads:
           type: integer
-        lastMonthSales:
+        rentCollectedThisMonth:
           type: number
+        overduePayments:
+          type: integer
+        totalProperties:
+          type: integer
         totalRevenue:
           type: number
         totalClients:

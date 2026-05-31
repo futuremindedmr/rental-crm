@@ -4,7 +4,11 @@ import {
   useGetCurrentTenant,
   useUpdateCurrentTenant,
   getGetCurrentTenantQueryKey,
+  useGetSquareStatus,
+  useSyncSquare,
+  getGetSquareStatusQueryKey,
 } from "@workspace/api-client-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +27,24 @@ export default function Settings() {
   }, [tenant?.name]);
 
   const dirty = tenant ? name.trim() !== tenant.name : false;
+
+  const { data: squareStatus, isLoading: squareLoading } = useGetSquareStatus();
+  const syncSquare = useSyncSquare();
+
+  const handleSyncSquare = () => {
+    syncSquare.mutate(undefined, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
+        toast({ title: "Synced", description: "Square data refreshed." });
+      },
+      onError: (err) =>
+        toast({
+          title: "Sync failed",
+          description: err instanceof Error ? err.message : "Could not sync Square",
+          variant: "destructive",
+        }),
+    });
+  };
 
   const handleSave = () => {
     if (!name.trim() || !dirty) return;
@@ -82,10 +104,20 @@ export default function Settings() {
           <h3 className="text-lg font-medium">Square Integration</h3>
           <p className="text-sm text-muted-foreground">Manage your connection to Square for payment syncing.</p>
           <div className="bg-muted p-4 rounded-md border flex items-center justify-between">
-            <div className="text-sm font-medium text-green-600">Connected</div>
-            <button className="text-sm font-medium border rounded px-3 py-1.5 hover:bg-background bg-background text-foreground" disabled>
-              Disconnect
-            </button>
+            <div className="text-sm">
+              Status:{" "}
+              {squareLoading ? (
+                <span className="text-muted-foreground">Checking...</span>
+              ) : squareStatus?.connected ? (
+                <span className="text-green-600 font-medium">Connected</span>
+              ) : (
+                <span className="text-muted-foreground font-medium">Disconnected</span>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleSyncSquare} disabled={syncSquare.isPending}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncSquare.isPending ? "animate-spin" : ""}`} />
+              Sync Square
+            </Button>
           </div>
         </div>
       </div>

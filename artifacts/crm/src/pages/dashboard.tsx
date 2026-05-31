@@ -1,33 +1,19 @@
-import { useState } from "react";
-import { useGetDashboardStats, useGetSquareStatus, useSyncSquare, useListRentals, useGetRecentPayments, useListLeads, getGetSquareStatusQueryKey } from "@workspace/api-client-react";
+import { useGetDashboardStats, useListRentals, useGetRecentPayments, useListLeads } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import { Activity, AlertTriangle, RefreshCw, DollarSign, Users, Target } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle } from "lucide-react";
 
 export default function Dashboard() {
-  const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
-  const { data: squareStatus, isLoading: squareLoading } = useGetSquareStatus();
-  const syncSquare = useSyncSquare();
 
   const { data: expiringRentals, isLoading: expiringLoading } = useListRentals({ expiringSoon: true });
   const { data: recentPayments, isLoading: paymentsLoading } = useGetRecentPayments();
   const { data: leads, isLoading: leadsLoading } = useListLeads({});
   
   const openLeads = leads?.filter(l => l.stage !== 'converted') || [];
-
-  const handleSyncSquare = () => {
-    syncSquare.mutate(undefined, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
-      }
-    });
-  };
 
   const getStageBadge = (stage: string) => {
     switch (stage) {
@@ -41,29 +27,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm">
-            Square Status:{" "}
-            {squareLoading ? (
-              <span className="text-muted-foreground">Checking...</span>
-            ) : squareStatus?.connected ? (
-              <span className="text-green-600 font-medium">Connected</span>
-            ) : (
-              <span className="text-muted-foreground">Disconnected</span>
-            )}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleSyncSquare}
-            disabled={syncSquare.isPending}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncSquare.isPending ? "animate-spin" : ""}`} />
-            Sync Square
-          </Button>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -96,11 +61,29 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Month's Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Rent Collected This Month</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${statsLoading ? "-" : (stats?.lastMonthSales || 0).toFixed(2)}</div>
+            <div className="text-2xl font-bold">${statsLoading ? "-" : (stats?.rentCollectedThisMonth || 0).toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-destructive">Overdue Payments</CardTitle>
+            <AlertCircle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{statsLoading ? "-" : stats?.overduePayments || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Properties</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statsLoading ? "-" : stats?.totalProperties || 0}</div>
           </CardContent>
         </Card>
         <Card>
