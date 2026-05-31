@@ -87,6 +87,8 @@ export const ListClientsResponseItem = zod.object({
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
   "status": zod.enum(['lead', 'active_renter', 'past_customer']),
+  "propertyId": zod.number().nullish(),
+  "propertyName": zod.string().nullish(),
   "squareCustomerId": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "activeRentalCount": zod.number().optional(),
@@ -107,6 +109,7 @@ export const CreateClientBody = zod.object({
   "phone": zod.string().optional(),
   "email": zod.string().optional(),
   "status": zod.enum(['lead', 'active_renter', 'past_customer']).default(createClientBodyStatusDefault),
+  "propertyId": zod.number().nullish(),
   "notes": zod.string().optional()
 })
 
@@ -125,6 +128,8 @@ export const GetClientResponse = zod.object({
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
   "status": zod.enum(['lead', 'active_renter', 'past_customer']),
+  "propertyId": zod.number().nullish(),
+  "propertyName": zod.string().nullish(),
   "squareCustomerId": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "activeRentalCount": zod.number().optional(),
@@ -145,6 +150,7 @@ export const UpdateClientBody = zod.object({
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
   "status": zod.enum(['lead', 'active_renter', 'past_customer']).optional(),
+  "propertyId": zod.number().nullish(),
   "squareCustomerId": zod.string().nullish(),
   "notes": zod.string().nullish()
 })
@@ -156,6 +162,8 @@ export const UpdateClientResponse = zod.object({
   "phone": zod.string().nullish(),
   "email": zod.string().nullish(),
   "status": zod.enum(['lead', 'active_renter', 'past_customer']),
+  "propertyId": zod.number().nullish(),
+  "propertyName": zod.string().nullish(),
   "squareCustomerId": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "activeRentalCount": zod.number().optional(),

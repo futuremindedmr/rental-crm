@@ -17,6 +17,8 @@ export interface ClientUpdate {
   email?: string | null;
   status?: ClientUpdateStatus;
   /** @nullable */
+  propertyId?: number | null;
+  /** @nullable */
   squareCustomerId?: string | null;
   /** @nullable */
   notes?: string | null;

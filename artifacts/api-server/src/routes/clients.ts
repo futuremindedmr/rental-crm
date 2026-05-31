@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { clientsTable, rentalsTable } from "@workspace/db";
+import { clientsTable, rentalsTable, propertiesTable } from "@workspace/db";
 import { eq, ilike, and, or, sql } from "drizzle-orm";
 import {
   ListClientsQueryParams,
@@ -20,6 +20,15 @@ function computeMonthsRemaining(startDate: string, termMonths: number): number {
   const monthsElapsed =
     (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
   return Math.max(0, termMonths - monthsElapsed);
+}
+
+async function tenantOwnsProperty(propertyId: number, tenantId: number): Promise<boolean> {
+  const [row] = await db
+    .select({ id: propertiesTable.id })
+    .from(propertiesTable)
+    .where(and(eq(propertiesTable.id, propertyId), eq(propertiesTable.tenantId, tenantId)))
+    .limit(1);
+  return !!row;
 }
 
 router.get("/clients", async (req, res) => {
@@ -48,11 +57,20 @@ router.get("/clients", async (req, res) => {
       phone: clientsTable.phone,
       email: clientsTable.email,
       status: clientsTable.status,
+      propertyId: clientsTable.propertyId,
+      propertyName: propertiesTable.name,
       squareCustomerId: clientsTable.squareCustomerId,
       notes: clientsTable.notes,
       createdAt: clientsTable.createdAt,
     })
     .from(clientsTable)
+    .leftJoin(
+      propertiesTable,
+      and(
+        eq(clientsTable.propertyId, propertiesTable.id),
+        eq(propertiesTable.tenantId, tenantId),
+      ),
+    )
     .where(and(...conditions))
     .orderBy(sql`${clientsTable.createdAt} desc`);
 
@@ -80,6 +98,9 @@ router.post("/clients", async (req, res) => {
 
   const parsed = CreateClientBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
+  if (parsed.data.propertyId != null && !(await tenantOwnsProperty(parsed.data.propertyId, tenantId))) {
+    res.status(400).json({ error: "Invalid property" }); return;
+  }
   const [client] = await db.insert(clientsTable).values({ ...parsed.data, tenantId }).returning();
   res.status(201).json({ ...client, activeRentalCount: 0, createdAt: client.createdAt.toISOString() });
 });
@@ -112,6 +133,9 @@ router.patch("/clients/:id", async (req, res) => {
   if (!paramParsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const bodyParsed = UpdateClientBody.safeParse(req.body);
   if (!bodyParsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
+  if (bodyParsed.data.propertyId != null && !(await tenantOwnsProperty(bodyParsed.data.propertyId, tenantId))) {
+    res.status(400).json({ error: "Invalid property" }); return;
+  }
 
   const [updated] = await db
     .update(clientsTable)

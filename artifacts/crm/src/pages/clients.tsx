@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListClients, useCreateClient } from "@workspace/api-client-react";
+import { useListClients, useCreateClient, useListProperties } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +12,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const newClientSchema = z.object({
@@ -20,6 +20,7 @@ const newClientSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
+  propertyId: z.string().optional(),
   status: z.enum(["lead", "active_renter", "past_customer"])
 });
 
@@ -35,6 +36,7 @@ export default function Clients() {
   });
 
   const createClientMutation = useCreateClient();
+  const { data: properties } = useListProperties();
 
   const form = useForm<z.infer<typeof newClientSchema>>({
     resolver: zodResolver(newClientSchema),
@@ -43,18 +45,53 @@ export default function Clients() {
       email: "",
       phone: "",
       address: "",
+      propertyId: "none",
       status: "lead"
     }
   });
 
   const onSubmit = (data: z.infer<typeof newClientSchema>) => {
-    createClientMutation.mutate({ data }, {
-      onSuccess: (client) => {
-        setDialogOpen(false);
-        form.reset();
-        setLocation(`/clients/${client.id}`);
+    const { propertyId, ...rest } = data;
+    createClientMutation.mutate(
+      {
+        data: {
+          ...rest,
+          propertyId: propertyId && propertyId !== "none" ? Number(propertyId) : null,
+        },
+      },
+      {
+        onSuccess: (client) => {
+          setDialogOpen(false);
+          form.reset();
+          setLocation(`/clients/${client.id}`);
+        },
       }
-    });
+    );
+  };
+
+  const handleExportCsv = () => {
+    const headers = ["Name", "Status", "Phone", "Email", "Property", "Active Rentals", "Added"];
+    const escape = (val: unknown) => {
+      const s = val == null ? "" : String(val);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = (clients ?? []).map((c) => [
+      c.name,
+      c.status,
+      c.phone ?? "",
+      c.email ?? "",
+      c.propertyName ?? "",
+      c.activeRentalCount,
+      c.createdAt ? format(new Date(c.createdAt), "yyyy-MM-dd") : "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `clients-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const getStatusBadge = (status: string) => {
@@ -70,10 +107,15 @@ export default function Clients() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>New Client</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCsv} disabled={!clients?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export to CSV
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>New Client</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>New Client</DialogTitle>
@@ -91,6 +133,23 @@ export default function Clients() {
                 )} />
                 <FormField control={form.control} name="address" render={({ field }) => (
                   <FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="propertyId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No property</SelectItem>
+                        {properties?.map((p) => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )} />
                 <FormField control={form.control} name="status" render={({ field }) => (
                   <FormItem>
@@ -116,7 +175,8 @@ export default function Clients() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -145,7 +205,9 @@ export default function Clients() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Contact</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Property</TableHead>
               <TableHead>Active Rentals</TableHead>
               <TableHead>Added</TableHead>
             </TableRow>
@@ -153,11 +215,11 @@ export default function Clients() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : clients?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No clients found.
                 </TableCell>
               </TableRow>
@@ -170,10 +232,9 @@ export default function Clients() {
                 >
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell>{getStatusBadge(client.status)}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">{client.phone}</div>
-                    <div className="text-sm text-muted-foreground">{client.email}</div>
-                  </TableCell>
+                  <TableCell className="text-sm">{client.phone || <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{client.email || "—"}</TableCell>
+                  <TableCell className="text-sm">{client.propertyName || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>{client.activeRentalCount}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {client.createdAt ? format(new Date(client.createdAt), 'MMM d, yyyy') : ''}

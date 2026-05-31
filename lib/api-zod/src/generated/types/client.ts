@@ -18,6 +18,10 @@ export interface Client {
   email?: string | null;
   status: ClientStatus;
   /** @nullable */
+  propertyId?: number | null;
+  /** @nullable */
+  propertyName?: string | null;
+  /** @nullable */
   squareCustomerId?: string | null;
   /** @nullable */
   notes?: string | null;

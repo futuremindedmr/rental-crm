@@ -1,2 +1,3 @@
 - [Orval react-query hook options](orval-hooks-querykey.md) — generated `useXxx` query options require `queryKey`; pass `queryKey: getXxxQueryKey()` alongside `enabled`.
 - [CRM typecheck blocked state](crm-typecheck-blocked.md) — `@workspace/crm` typecheck aborts on a pre-existing composite-reference error; use a throwaway tsconfig to validate source.
+- [Tenant-scoped joins & FK writes](tenant-scoped-joins.md) — cross-tenant FKs have no DB tenant constraint; scope joins by related tenantId AND verify FK ownership on writes.

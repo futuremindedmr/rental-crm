@@ -14,5 +14,7 @@ export interface ClientInput {
   phone?: string;
   email?: string;
   status?: ClientInputStatus;
+  /** @nullable */
+  propertyId?: number | null;
   notes?: string;
 }

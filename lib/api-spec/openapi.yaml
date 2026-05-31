@@ -746,6 +746,10 @@ components:
         status:
           type: string
           enum: [lead, active_renter, past_customer]
+        propertyId:
+          type: ["integer", "null"]
+        propertyName:
+          type: ["string", "null"]
         squareCustomerId:
           type: ["string", "null"]
         notes:
@@ -772,6 +776,8 @@ components:
           type: string
           enum: [lead, active_renter, past_customer]
           default: lead
+        propertyId:
+          type: ["integer", "null"]
         notes:
           type: string
 
@@ -789,6 +795,8 @@ components:
         status:
           type: string
           enum: [lead, active_renter, past_customer]
+        propertyId:
+          type: ["integer", "null"]
         squareCustomerId:
           type: ["string", "null"]
         notes:

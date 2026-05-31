@@ -33,6 +33,10 @@ export interface Client {
   email?: string | null;
   status: ClientStatus;
   /** @nullable */
+  propertyId?: number | null;
+  /** @nullable */
+  propertyName?: string | null;
+  /** @nullable */
   squareCustomerId?: string | null;
   /** @nullable */
   notes?: string | null;
@@ -56,6 +60,8 @@ export interface ClientInput {
   phone?: string;
   email?: string;
   status?: ClientInputStatus;
+  /** @nullable */
+  propertyId?: number | null;
   notes?: string;
 }
 
@@ -77,6 +83,8 @@ export interface ClientUpdate {
   /** @nullable */
   email?: string | null;
   status?: ClientUpdateStatus;
+  /** @nullable */
+  propertyId?: number | null;
   /** @nullable */
   squareCustomerId?: string | null;
   /** @nullable */
