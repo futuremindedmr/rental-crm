@@ -2,10 +2,10 @@ import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
   Users, 
-  Building2, 
-  CircleDollarSign, 
-  CalendarDays, 
-  Settings 
+  Inbox, 
+  FileText,
+  Settings,
+  KeySquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +15,9 @@ interface LayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Contacts", href: "/contacts", icon: Users },
-  { name: "Companies", href: "/companies", icon: Building2 },
-  { name: "Deals", href: "/deals", icon: CircleDollarSign },
-  { name: "Activities", href: "/activities", icon: CalendarDays },
+  { name: "Clients", href: "/clients", icon: Users },
+  { name: "Leads", href: "/leads", icon: Inbox },
+  { name: "Rentals", href: "/rentals", icon: FileText },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -26,13 +25,11 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <div className="w-64 flex-shrink-0 border-r bg-card flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b">
-          <div className="flex items-center gap-2 text-primary font-bold text-lg">
-            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-primary-foreground">
-              N
-            </div>
-            Nexus CRM
+      <div className="w-64 flex-shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-2 font-bold text-lg text-sidebar-primary-foreground">
+            <KeySquare className="h-6 w-6 text-accent" />
+            RentTrack
           </div>
         </div>
         
@@ -45,8 +42,8 @@ export function Layout({ children }: LayoutProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   )}
                 >
                   <item.icon className="w-4 h-4" />
@@ -57,14 +54,14 @@ export function Layout({ children }: LayoutProps) {
           })}
         </nav>
         
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-sidebar-border">
           <Link href="/settings">
             <span
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
                 location === "/settings"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               )}
             >
               <Settings className="w-4 h-4" />

@@ -2,24 +2,28 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: CRM Platform API
+  version: 0.2.0
+  description: Washer & Dryer Rental CRM API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-  - name: contacts
-    description: Contact management
-  - name: companies
-    description: Company management
-  - name: deals
-    description: Deal pipeline management
-  - name: activities
-    description: Activity tracking
+  - name: clients
+    description: Client management
+  - name: leads
+    description: Lead pipeline
+  - name: rentals
+    description: Rental tracking
+  - name: agreements
+    description: Rental agreement file attachments
+  - name: square
+    description: Square integration
   - name: dashboard
     description: Dashboard and analytics
+  - name: Storage
+    description: Object storage upload and serving endpoints.
 
 paths:
   /healthz:
@@ -35,57 +39,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  # ── Contacts ──────────────────────────────────────────────────────────────
-  /contacts:
+  # ── Clients ──────────────────────────────────────────────────────────────
+  /clients:
     get:
-      operationId: listContacts
-      tags: [contacts]
-      summary: List contacts
+      operationId: listClients
+      tags: [clients]
+      summary: List clients
       parameters:
         - name: search
           in: query
           schema:
             type: string
-        - name: companyId
-          in: query
-          schema:
-            type: ["integer", "null"]
         - name: status
           in: query
           schema:
             type: ["string", "null"]
       responses:
         "200":
-          description: List of contacts
+          description: List of clients
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Contact"
+                  $ref: "#/components/schemas/Client"
     post:
-      operationId: createContact
-      tags: [contacts]
-      summary: Create a contact
+      operationId: createClient
+      tags: [clients]
+      summary: Create a client
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContactInput"
+              $ref: "#/components/schemas/ClientInput"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Contact"
+                $ref: "#/components/schemas/Client"
 
-  /contacts/{id}:
+  /clients/{id}:
     get:
-      operationId: getContact
-      tags: [contacts]
-      summary: Get a contact
+      operationId: getClient
+      tags: [clients]
+      summary: Get a client
       parameters:
         - name: id
           in: path
@@ -94,17 +94,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: Contact
+          description: Client
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Contact"
+                $ref: "#/components/schemas/Client"
         "404":
           description: Not found
     patch:
-      operationId: updateContact
-      tags: [contacts]
-      summary: Update a contact
+      operationId: updateClient
+      tags: [clients]
+      summary: Update a client
       parameters:
         - name: id
           in: path
@@ -116,18 +116,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContactUpdate"
+              $ref: "#/components/schemas/ClientUpdate"
       responses:
         "200":
           description: Updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Contact"
+                $ref: "#/components/schemas/Client"
     delete:
-      operationId: deleteContact
-      tags: [contacts]
-      summary: Delete a contact
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete a client
       parameters:
         - name: id
           in: path
@@ -138,152 +138,53 @@ paths:
         "204":
           description: Deleted
 
-  # ── Companies ─────────────────────────────────────────────────────────────
-  /companies:
+  # ── Leads ─────────────────────────────────────────────────────────────────
+  /leads:
     get:
-      operationId: listCompanies
-      tags: [companies]
-      summary: List companies
-      parameters:
-        - name: search
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: List of companies
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Company"
-    post:
-      operationId: createCompany
-      tags: [companies]
-      summary: Create a company
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CompanyInput"
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Company"
-
-  /companies/{id}:
-    get:
-      operationId: getCompany
-      tags: [companies]
-      summary: Get a company
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Company
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Company"
-        "404":
-          description: Not found
-    patch:
-      operationId: updateCompany
-      tags: [companies]
-      summary: Update a company
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CompanyUpdate"
-      responses:
-        "200":
-          description: Updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Company"
-    delete:
-      operationId: deleteCompany
-      tags: [companies]
-      summary: Delete a company
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Deleted
-
-  # ── Deals ─────────────────────────────────────────────────────────────────
-  /deals:
-    get:
-      operationId: listDeals
-      tags: [deals]
-      summary: List deals
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads
       parameters:
         - name: stage
           in: query
           schema:
             type: ["string", "null"]
-        - name: contactId
-          in: query
-          schema:
-            type: ["integer", "null"]
-        - name: companyId
+        - name: clientId
           in: query
           schema:
             type: ["integer", "null"]
       responses:
         "200":
-          description: List of deals
+          description: List of leads
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Deal"
+                  $ref: "#/components/schemas/Lead"
     post:
-      operationId: createDeal
-      tags: [deals]
-      summary: Create a deal
+      operationId: createLead
+      tags: [leads]
+      summary: Create a lead
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DealInput"
+              $ref: "#/components/schemas/LeadInput"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Deal"
+                $ref: "#/components/schemas/Lead"
 
-  /deals/{id}:
+  /leads/{id}:
     get:
-      operationId: getDeal
-      tags: [deals]
-      summary: Get a deal
+      operationId: getLead
+      tags: [leads]
+      summary: Get a lead
       parameters:
         - name: id
           in: path
@@ -292,17 +193,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: Deal
+          description: Lead
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Deal"
+                $ref: "#/components/schemas/Lead"
         "404":
           description: Not found
     patch:
-      operationId: updateDeal
-      tags: [deals]
-      summary: Update a deal
+      operationId: updateLead
+      tags: [leads]
+      summary: Update a lead
       parameters:
         - name: id
           in: path
@@ -314,18 +215,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DealUpdate"
+              $ref: "#/components/schemas/LeadUpdate"
       responses:
         "200":
           description: Updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Deal"
+                $ref: "#/components/schemas/Lead"
     delete:
-      operationId: deleteDeal
-      tags: [deals]
-      summary: Delete a deal
+      operationId: deleteLead
+      tags: [leads]
+      summary: Delete a lead
       parameters:
         - name: id
           in: path
@@ -336,57 +237,72 @@ paths:
         "204":
           description: Deleted
 
-  # ── Activities ────────────────────────────────────────────────────────────
-  /activities:
+  # ── Rentals ───────────────────────────────────────────────────────────────
+  /rentals:
     get:
-      operationId: listActivities
-      tags: [activities]
-      summary: List activities
+      operationId: listRentals
+      tags: [rentals]
+      summary: List rentals
       parameters:
-        - name: contactId
+        - name: clientId
           in: query
           schema:
             type: ["integer", "null"]
-        - name: dealId
+        - name: expiringSoon
           in: query
           schema:
-            type: ["integer", "null"]
-        - name: type
-          in: query
-          schema:
-            type: ["string", "null"]
+            type: ["boolean", "null"]
       responses:
         "200":
-          description: List of activities
+          description: List of rentals
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Activity"
+                  $ref: "#/components/schemas/Rental"
     post:
-      operationId: createActivity
-      tags: [activities]
-      summary: Create an activity
+      operationId: createRental
+      tags: [rentals]
+      summary: Create a rental
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ActivityInput"
+              $ref: "#/components/schemas/RentalInput"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Activity"
+                $ref: "#/components/schemas/Rental"
 
-  /activities/{id}:
+  /rentals/{id}:
+    get:
+      operationId: getRental
+      tags: [rentals]
+      summary: Get a rental
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rental
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "404":
+          description: Not found
     patch:
-      operationId: updateActivity
-      tags: [activities]
-      summary: Update an activity
+      operationId: updateRental
+      tags: [rentals]
+      summary: Update a rental
       parameters:
         - name: id
           in: path
@@ -398,18 +314,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ActivityUpdate"
+              $ref: "#/components/schemas/RentalUpdate"
       responses:
         "200":
           description: Updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Activity"
+                $ref: "#/components/schemas/Rental"
     delete:
-      operationId: deleteActivity
-      tags: [activities]
-      summary: Delete an activity
+      operationId: deleteRental
+      tags: [rentals]
+      summary: Delete a rental
       parameters:
         - name: id
           in: path
@@ -420,12 +336,150 @@ paths:
         "204":
           description: Deleted
 
-  # ── Dashboard / Analytics ─────────────────────────────────────────────────
+  # ── Rental Agreements ─────────────────────────────────────────────────────
+  /clients/{clientId}/agreements:
+    get:
+      operationId: listAgreements
+      tags: [agreements]
+      summary: List rental agreement files for a client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of agreements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentalAgreement"
+    post:
+      operationId: createAgreement
+      tags: [agreements]
+      summary: Attach a rental agreement file to a client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgreementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalAgreement"
+
+  /clients/{clientId}/agreements/{id}:
+    delete:
+      operationId: deleteAgreement
+      tags: [agreements]
+      summary: Delete a rental agreement attachment
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Square ────────────────────────────────────────────────────────────────
+  /square/payments:
+    get:
+      operationId: listSquarePayments
+      tags: [square]
+      summary: List synced Square payments
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquarePayment"
+
+  /square/invoices:
+    get:
+      operationId: listSquareInvoices
+      tags: [square]
+      summary: List synced Square invoices
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquareInvoice"
+
+  /square/sync:
+    post:
+      operationId: syncSquare
+      tags: [square]
+      summary: Sync customers, payments and invoices from Square
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquareSyncResult"
+        "503":
+          description: Square not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /square/status:
+    get:
+      operationId: getSquareStatus
+      tags: [square]
+      summary: Check if Square is connected
+      responses:
+        "200":
+          description: Square connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquareStatus"
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────
   /dashboard/stats:
     get:
       operationId: getDashboardStats
       tags: [dashboard]
-      summary: Get dashboard overview stats
+      summary: Get dashboard stats
       responses:
         "200":
           description: Dashboard statistics
@@ -434,35 +488,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardStats"
 
-  /dashboard/pipeline:
+  /dashboard/recent-payments:
     get:
-      operationId: getPipelineSummary
+      operationId: getRecentPayments
       tags: [dashboard]
-      summary: Get pipeline summary by stage
+      summary: Get recent payments for dashboard feed
       responses:
         "200":
-          description: Pipeline breakdown
+          description: Recent payments
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PipelineStage"
+                  $ref: "#/components/schemas/SquarePayment"
 
-  /dashboard/recent-activity:
-    get:
-      operationId: getRecentActivity
-      tags: [dashboard]
-      summary: Get recent activities feed
+  # ── Object Storage ────────────────────────────────────────────────────────
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
       responses:
-        "200":
-          description: Recent activities
+        '200':
+          description: Presigned upload URL generated.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Activity"
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 
 components:
   schemas:
@@ -473,318 +570,325 @@ components:
           type: string
       required: [status]
 
-    # ── Contact ──────────────────────────────────────────────────────────────
-    Contact:
+    ErrorEnvelope:
       type: object
-      required: [id, firstName, lastName, email, status, createdAt]
+      required: [error]
       properties:
-        id:
-          type: integer
-        firstName:
-          type: string
-        lastName:
-          type: string
-        email:
-          type: string
-        phone:
-          type: ["string", "null"]
-        title:
-          type: ["string", "null"]
-        status:
-          type: string
-          enum: [lead, prospect, customer, churned]
-        companyId:
-          type: ["integer", "null"]
-        companyName:
-          type: ["string", "null"]
-        notes:
-          type: ["string", "null"]
-        createdAt:
+        error:
           type: string
 
-    ContactInput:
+    # ── Client ───────────────────────────────────────────────────────────────
+    Client:
       type: object
-      required: [firstName, lastName, email]
-      properties:
-        firstName:
-          type: string
-          minLength: 1
-        lastName:
-          type: string
-          minLength: 1
-        email:
-          type: string
-        phone:
-          type: string
-        title:
-          type: string
-        status:
-          type: string
-          enum: [lead, prospect, customer, churned]
-          default: lead
-        companyId:
-          type: ["integer", "null"]
-        notes:
-          type: string
-
-    ContactUpdate:
-      type: object
-      properties:
-        firstName:
-          type: string
-        lastName:
-          type: string
-        email:
-          type: string
-        phone:
-          type: ["string", "null"]
-        title:
-          type: ["string", "null"]
-        status:
-          type: string
-          enum: [lead, prospect, customer, churned]
-        companyId:
-          type: ["integer", "null"]
-        notes:
-          type: ["string", "null"]
-
-    # ── Company ──────────────────────────────────────────────────────────────
-    Company:
-      type: object
-      required: [id, name, createdAt]
+      required: [id, name, status, createdAt]
       properties:
         id:
           type: integer
         name:
           type: string
-        domain:
-          type: ["string", "null"]
-        industry:
-          type: ["string", "null"]
-        size:
+        address:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
-        address:
+        email:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [lead, active_renter, past_customer]
+        squareCustomerId:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
-        contactCount:
+        activeRentalCount:
           type: integer
         createdAt:
           type: string
 
-    CompanyInput:
+    ClientInput:
       type: object
       required: [name]
       properties:
         name:
           type: string
           minLength: 1
-        domain:
-          type: string
-        industry:
-          type: string
-        size:
+        address:
           type: string
         phone:
           type: string
-        address:
+        email:
           type: string
+        status:
+          type: string
+          enum: [lead, active_renter, past_customer]
+          default: lead
         notes:
           type: string
 
-    CompanyUpdate:
+    ClientUpdate:
       type: object
       properties:
         name:
           type: string
-        domain:
-          type: ["string", "null"]
-        industry:
-          type: ["string", "null"]
-        size:
+        address:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
-        address:
+        email:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [lead, active_renter, past_customer]
+        squareCustomerId:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
 
-    # ── Deal ─────────────────────────────────────────────────────────────────
-    Deal:
+    # ── Lead ─────────────────────────────────────────────────────────────────
+    Lead:
       type: object
-      required: [id, title, stage, value, createdAt]
+      required: [id, clientId, stage, createdAt]
       properties:
         id:
           type: integer
-        title:
-          type: string
+        clientId:
+          type: integer
+        clientName:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        clientEmail:
+          type: ["string", "null"]
         stage:
           type: string
-          enum: [lead, qualified, proposal, negotiation, closed_won, closed_lost]
-        value:
+          enum: [contacted, agreement_sent, term_selected, converted]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    LeadInput:
+      type: object
+      required: [clientId, stage]
+      properties:
+        clientId:
+          type: integer
+        stage:
+          type: string
+          enum: [contacted, agreement_sent, term_selected, converted]
+          default: contacted
+        notes:
+          type: string
+
+    LeadUpdate:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum: [contacted, agreement_sent, term_selected, converted]
+        notes:
+          type: ["string", "null"]
+
+    # ── Rental ───────────────────────────────────────────────────────────────
+    Rental:
+      type: object
+      required: [id, clientId, startDate, termMonths, monthlyRate, monthsRemaining, isExpiringSoon, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: ["string", "null"]
+        unitDescription:
+          type: ["string", "null"]
+        startDate:
+          type: string
+        termMonths:
+          type: integer
+        monthlyRate:
           type: number
-        probability:
-          type: ["integer", "null"]
-        contactId:
-          type: ["integer", "null"]
-        contactName:
-          type: ["string", "null"]
-        companyId:
-          type: ["integer", "null"]
-        companyName:
-          type: ["string", "null"]
-        expectedCloseDate:
-          type: ["string", "null"]
+        monthsRemaining:
+          type: integer
+        isExpiringSoon:
+          type: boolean
         notes:
           type: ["string", "null"]
         createdAt:
           type: string
 
-    DealInput:
+    RentalInput:
       type: object
-      required: [title, stage, value]
+      required: [clientId, startDate, termMonths, monthlyRate]
       properties:
-        title:
-          type: string
-          minLength: 1
-        stage:
-          type: string
-          enum: [lead, qualified, proposal, negotiation, closed_won, closed_lost]
-        value:
-          type: number
-          minimum: 0
-        probability:
+        clientId:
           type: integer
+        unitDescription:
+          type: string
+        startDate:
+          type: string
+        termMonths:
+          type: integer
+          minimum: 1
+        monthlyRate:
+          type: number
           minimum: 0
-          maximum: 100
-        contactId:
-          type: ["integer", "null"]
-        companyId:
-          type: ["integer", "null"]
-        expectedCloseDate:
-          type: ["string", "null"]
         notes:
           type: string
 
-    DealUpdate:
+    RentalUpdate:
       type: object
       properties:
-        title:
-          type: string
-        stage:
-          type: string
-          enum: [lead, qualified, proposal, negotiation, closed_won, closed_lost]
-        value:
-          type: number
-        probability:
-          type: ["integer", "null"]
-        contactId:
-          type: ["integer", "null"]
-        companyId:
-          type: ["integer", "null"]
-        expectedCloseDate:
+        unitDescription:
           type: ["string", "null"]
+        startDate:
+          type: string
+        termMonths:
+          type: integer
+          minimum: 1
+        monthlyRate:
+          type: number
+          minimum: 0
         notes:
           type: ["string", "null"]
 
-    # ── Activity ─────────────────────────────────────────────────────────────
-    Activity:
+    # ── Rental Agreement ─────────────────────────────────────────────────────
+    RentalAgreement:
       type: object
-      required: [id, type, subject, createdAt]
+      required: [id, clientId, fileName, objectPath, createdAt]
       properties:
         id:
           type: integer
-        type:
+        clientId:
+          type: integer
+        rentalId:
+          type: ["integer", "null"]
+        fileName:
           type: string
-          enum: [call, email, meeting, task, note]
-        subject:
+        objectPath:
+          type: string
+        createdAt:
+          type: string
+
+    AgreementInput:
+      type: object
+      required: [fileName, objectPath]
+      properties:
+        rentalId:
+          type: ["integer", "null"]
+        fileName:
+          type: string
+          minLength: 1
+        objectPath:
+          type: string
+          minLength: 1
+
+    # ── Square ───────────────────────────────────────────────────────────────
+    SquarePayment:
+      type: object
+      required: [id, amount, status, paymentDate, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: ["string", "null"]
+        squarePaymentId:
+          type: string
+        amount:
+          type: number
+        status:
           type: string
         description:
           type: ["string", "null"]
-        contactId:
+        paymentDate:
+          type: string
+        createdAt:
+          type: string
+
+    SquareInvoice:
+      type: object
+      required: [id, amount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
           type: ["integer", "null"]
-        contactName:
+        clientName:
           type: ["string", "null"]
-        dealId:
-          type: ["integer", "null"]
-        dealTitle:
-          type: ["string", "null"]
-        completed:
-          type: boolean
+        squareInvoiceId:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
         dueDate:
           type: ["string", "null"]
         createdAt:
           type: string
 
-    ActivityInput:
+    SquareSyncResult:
       type: object
-      required: [type, subject]
+      required: [customersImported, paymentsImported, invoicesImported]
       properties:
-        type:
-          type: string
-          enum: [call, email, meeting, task, note]
-        subject:
-          type: string
-          minLength: 1
-        description:
-          type: string
-        contactId:
-          type: ["integer", "null"]
-        dealId:
-          type: ["integer", "null"]
-        completed:
+        customersImported:
+          type: integer
+        paymentsImported:
+          type: integer
+        invoicesImported:
+          type: integer
+
+    SquareStatus:
+      type: object
+      required: [connected]
+      properties:
+        connected:
           type: boolean
-          default: false
-        dueDate:
+        merchantId:
           type: ["string", "null"]
 
-    ActivityUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [call, email, meeting, task, note]
-        subject:
-          type: string
-        description:
-          type: ["string", "null"]
-        completed:
-          type: boolean
-        dueDate:
-          type: ["string", "null"]
-
-    # ── Dashboard ─────────────────────────────────────────────────────────────
+    # ── Dashboard ────────────────────────────────────────────────────────────
     DashboardStats:
       type: object
-      required: [totalContacts, totalCompanies, totalDeals, totalPipelineValue, wonDealsValue, openDealsCount, activitiesThisWeek, newContactsThisMonth]
+      required: [activeRentals, expiringSoon, openLeads, lastMonthSales, totalRevenue, totalClients]
       properties:
-        totalContacts:
+        activeRentals:
           type: integer
-        totalCompanies:
+        expiringSoon:
           type: integer
-        totalDeals:
+        openLeads:
           type: integer
-        totalPipelineValue:
+        lastMonthSales:
           type: number
-        wonDealsValue:
+        totalRevenue:
           type: number
-        openDealsCount:
-          type: integer
-        activitiesThisWeek:
-          type: integer
-        newContactsThisMonth:
+        totalClients:
           type: integer
 
-    PipelineStage:
+    # ── Storage ──────────────────────────────────────────────────────────────
+    UploadUrlRequest:
       type: object
-      required: [stage, count, value]
+      required: [name, size, contentType]
       properties:
-        stage:
+        name:
           type: string
-        count:
+          minLength: 1
+        size:
           type: integer
-        value:
-          type: number
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'

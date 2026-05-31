@@ -6,12 +6,10 @@ import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
 
 import Dashboard from "@/pages/dashboard";
-import Contacts from "@/pages/contacts";
-import ContactDetail from "@/pages/contact-detail";
-import Companies from "@/pages/companies";
-import CompanyDetail from "@/pages/company-detail";
-import Deals from "@/pages/deals";
-import Activities from "@/pages/activities";
+import Clients from "@/pages/clients";
+import ClientDetail from "@/pages/client-detail";
+import Leads from "@/pages/leads";
+import Rentals from "@/pages/rentals";
 import Settings from "@/pages/settings";
 
 const queryClient = new QueryClient();
@@ -21,12 +19,10 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/contacts" component={Contacts} />
-        <Route path="/contacts/:id" component={ContactDetail} />
-        <Route path="/companies" component={Companies} />
-        <Route path="/companies/:id" component={CompanyDetail} />
-        <Route path="/deals" component={Deals} />
-        <Route path="/activities" component={Activities} />
+        <Route path="/clients" component={Clients} />
+        <Route path="/clients/:id" component={ClientDetail} />
+        <Route path="/leads" component={Leads} />
+        <Route path="/rentals" component={Rentals} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

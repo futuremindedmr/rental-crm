@@ -1,84 +1,75 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contactsTable, companiesTable, dealsTable, activitiesTable } from "@workspace/db";
+import { clientsTable, leadsTable, rentalsTable, squarePaymentsTable } from "@workspace/db";
 import { sql, ne } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/dashboard/stats", async (req, res) => {
+function computeMonthsRemaining(startDate: string, termMonths: number): number {
+  const start = new Date(startDate);
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - 7);
+  const monthsElapsed =
+    (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  return Math.max(0, termMonths - monthsElapsed);
+}
+
+router.get("/dashboard/stats", async (_req, res) => {
+  const now = new Date();
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
-    [contactsRow],
-    [companiesRow],
-    [dealsRow],
-    [wonRow],
-    [openRow],
-    [activitiesRow],
-    [newContactsRow],
+    [totalClientsRow],
+    [openLeadsRow],
+    [totalRevenueRow],
+    [lastMonthRow],
+    allRentals,
   ] = await Promise.all([
-    db.select({ count: sql<number>`count(*)::int` }).from(contactsTable),
-    db.select({ count: sql<number>`count(*)::int` }).from(companiesTable),
-    db.select({ count: sql<number>`count(*)::int`, total: sql<number>`coalesce(sum(value::numeric), 0)` }).from(dealsTable),
-    db.select({ total: sql<number>`coalesce(sum(value::numeric), 0)` }).from(dealsTable).where(sql`stage = 'closed_won'`),
-    db.select({ count: sql<number>`count(*)::int` }).from(dealsTable).where(sql`stage not in ('closed_won', 'closed_lost')`),
-    db.select({ count: sql<number>`count(*)::int` }).from(activitiesTable).where(sql`created_at >= ${startOfWeek.toISOString()}`),
-    db.select({ count: sql<number>`count(*)::int` }).from(contactsTable).where(sql`created_at >= ${startOfMonth.toISOString()}`),
+    db.select({ count: sql<number>`count(*)::int` }).from(clientsTable),
+    db.select({ count: sql<number>`count(*)::int` }).from(leadsTable)
+      .where(sql`stage != 'converted'`),
+    db.select({ total: sql<number>`coalesce(sum(amount::numeric), 0)` }).from(squarePaymentsTable)
+      .where(sql`status = 'COMPLETED'`),
+    db.select({ total: sql<number>`coalesce(sum(amount::numeric), 0)` }).from(squarePaymentsTable)
+      .where(sql`status = 'COMPLETED' AND payment_date >= ${startOfLastMonth.toISOString().slice(0,10)} AND payment_date < ${endOfLastMonth.toISOString().slice(0,10)}`),
+    db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths }).from(rentalsTable),
   ]);
 
+  const activeRentals = allRentals.filter(r => computeMonthsRemaining(r.startDate, r.termMonths) > 0);
+  const expiringSoon = activeRentals.filter(r => {
+    const rem = computeMonthsRemaining(r.startDate, r.termMonths);
+    return rem <= 2 && rem > 0;
+  });
+
   res.json({
-    totalContacts: contactsRow?.count ?? 0,
-    totalCompanies: companiesRow?.count ?? 0,
-    totalDeals: dealsRow?.count ?? 0,
-    totalPipelineValue: Number(dealsRow?.total ?? 0),
-    wonDealsValue: Number(wonRow?.total ?? 0),
-    openDealsCount: openRow?.count ?? 0,
-    activitiesThisWeek: activitiesRow?.count ?? 0,
-    newContactsThisMonth: newContactsRow?.count ?? 0,
+    activeRentals: activeRentals.length,
+    expiringSoon: expiringSoon.length,
+    openLeads: openLeadsRow?.count ?? 0,
+    lastMonthSales: Number(lastMonthRow?.total ?? 0),
+    totalRevenue: Number(totalRevenueRow?.total ?? 0),
+    totalClients: totalClientsRow?.count ?? 0,
   });
 });
 
-router.get("/dashboard/pipeline", async (req, res) => {
+router.get("/dashboard/recent-payments", async (_req, res) => {
   const rows = await db
     .select({
-      stage: dealsTable.stage,
-      count: sql<number>`count(*)::int`,
-      value: sql<number>`coalesce(sum(value::numeric), 0)`,
+      id: squarePaymentsTable.id,
+      clientId: squarePaymentsTable.clientId,
+      clientName: clientsTable.name,
+      squarePaymentId: squarePaymentsTable.squarePaymentId,
+      amount: squarePaymentsTable.amount,
+      status: squarePaymentsTable.status,
+      description: squarePaymentsTable.description,
+      paymentDate: squarePaymentsTable.paymentDate,
+      createdAt: squarePaymentsTable.createdAt,
     })
-    .from(dealsTable)
-    .groupBy(dealsTable.stage);
-
-  const stageOrder = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"];
-  const sorted = rows.sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
-
-  res.json(sorted.map(r => ({ stage: r.stage, count: r.count, value: Number(r.value) })));
-});
-
-router.get("/dashboard/recent-activity", async (req, res) => {
-  const rows = await db
-    .select({
-      id: activitiesTable.id,
-      type: activitiesTable.type,
-      subject: activitiesTable.subject,
-      description: activitiesTable.description,
-      contactId: activitiesTable.contactId,
-      contactName: sql<string | null>`concat(${contactsTable.firstName}, ' ', ${contactsTable.lastName})`,
-      dealId: activitiesTable.dealId,
-      dealTitle: dealsTable.title,
-      completed: activitiesTable.completed,
-      dueDate: activitiesTable.dueDate,
-      createdAt: activitiesTable.createdAt,
-    })
-    .from(activitiesTable)
-    .leftJoin(contactsTable, sql`${activitiesTable.contactId} = ${contactsTable.id}`)
-    .leftJoin(dealsTable, sql`${activitiesTable.dealId} = ${dealsTable.id}`)
-    .orderBy(sql`${activitiesTable.createdAt} desc`)
+    .from(squarePaymentsTable)
+    .leftJoin(clientsTable, sql`${squarePaymentsTable.clientId} = ${clientsTable.id}`)
+    .orderBy(sql`${squarePaymentsTable.createdAt} desc`)
     .limit(10);
 
-  res.json(rows.map(r => ({ ...r, createdAt: r.createdAt.toISOString() })));
+  res.json(rows.map(r => ({ ...r, amount: Number(r.amount), createdAt: r.createdAt.toISOString() })));
 });
 
 export default router;
