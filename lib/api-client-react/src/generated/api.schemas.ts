@@ -241,6 +241,40 @@ export interface AgreementInput {
   objectPath: string;
 }
 
+export interface ManualPayment {
+  id: number;
+  /** @nullable */
+  clientId: number | null;
+  /** @nullable */
+  clientName?: string | null;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type ManualPaymentInputPaymentMethod = typeof ManualPaymentInputPaymentMethod[keyof typeof ManualPaymentInputPaymentMethod];
+
+
+export const ManualPaymentInputPaymentMethod = {
+  cash: 'cash',
+  check: 'check',
+  zelle: 'zelle',
+  venmo: 'venmo',
+  bank_transfer: 'bank_transfer',
+} as const;
+
+export interface ManualPaymentInput {
+  clientId: number;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: ManualPaymentInputPaymentMethod;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface SquarePayment {
   id: number;
   /** @nullable */
@@ -377,6 +411,13 @@ clientId?: number | null;
 };
 
 export type ListSquareInvoicesParams = {
+/**
+ * @nullable
+ */
+clientId?: number | null;
+};
+
+export type ListManualPaymentsParams = {
 /**
  * @nullable
  */

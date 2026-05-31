@@ -625,6 +625,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/SquareStatus"
 
+  # ── Manual Payments ───────────────────────────────────────────────────────
+  /manual-payments:
+    get:
+      operationId: listManualPayments
+      tags: [manual-payments]
+      summary: List manual payments
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of manual payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualPayment"
+    post:
+      operationId: createManualPayment
+      tags: [manual-payments]
+      summary: Log a manual payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualPaymentInput"
+      responses:
+        "201":
+          description: Created manual payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualPayment"
+
   # ── Dashboard ─────────────────────────────────────────────────────────────
   /dashboard/stats:
     get:
@@ -989,6 +1027,44 @@ components:
         objectPath:
           type: string
           minLength: 1
+
+    # ── Manual Payments ──────────────────────────────────────────────────────
+    ManualPayment:
+      type: object
+      required: [id, clientId, amount, paymentDate, paymentMethod, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: ["string", "null"]
+        amount:
+          type: number
+        paymentDate:
+          type: string
+        paymentMethod:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ManualPaymentInput:
+      type: object
+      required: [clientId, amount, paymentDate, paymentMethod]
+      properties:
+        clientId:
+          type: integer
+        amount:
+          type: number
+        paymentDate:
+          type: string
+        paymentMethod:
+          type: string
+          enum: [cash, check, zelle, venmo, bank_transfer]
+        notes:
+          type: ["string", "null"]
 
     # ── Square ───────────────────────────────────────────────────────────────
     SquarePayment:

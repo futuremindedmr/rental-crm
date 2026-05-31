@@ -33,9 +33,12 @@ import type {
   LeadUpdate,
   ListClientsParams,
   ListLeadsParams,
+  ListManualPaymentsParams,
   ListRentalsParams,
   ListSquareInvoicesParams,
   ListSquarePaymentsParams,
+  ManualPayment,
+  ManualPaymentInput,
   Property,
   PropertyInput,
   PropertyUpdate,
@@ -2385,6 +2388,161 @@ export function useGetSquareStatus<TData = Awaited<ReturnType<typeof getSquareSt
 
 
 
+
+export const getListManualPaymentsUrl = (params?: ListManualPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/manual-payments?${stringifiedParams}` : `/api/manual-payments`
+}
+
+/**
+ * @summary List manual payments
+ */
+export const listManualPayments = async (params?: ListManualPaymentsParams, options?: RequestInit): Promise<ManualPayment[]> => {
+
+  return customFetch<ManualPayment[]>(getListManualPaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManualPaymentsQueryKey = (params?: ListManualPaymentsParams,) => {
+    return [
+    `/api/manual-payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListManualPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listManualPayments>>, TError = ErrorType<unknown>>(params?: ListManualPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManualPaymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualPayments>>> = ({ signal }) => listManualPayments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManualPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListManualPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listManualPayments>>>
+export type ListManualPaymentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List manual payments
+ */
+
+export function useListManualPayments<TData = Awaited<ReturnType<typeof listManualPayments>>, TError = ErrorType<unknown>>(
+ params?: ListManualPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListManualPaymentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateManualPaymentUrl = () => {
+
+
+
+
+  return `/api/manual-payments`
+}
+
+/**
+ * @summary Log a manual payment
+ */
+export const createManualPayment = async (manualPaymentInput: ManualPaymentInput, options?: RequestInit): Promise<ManualPayment> => {
+
+  return customFetch<ManualPayment>(getCreateManualPaymentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      manualPaymentInput,)
+  }
+);}
+
+
+
+
+export const getCreateManualPaymentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualPayment>>, TError,{data: BodyType<ManualPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManualPayment>>, TError,{data: BodyType<ManualPaymentInput>}, TContext> => {
+
+const mutationKey = ['createManualPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManualPayment>>, {data: BodyType<ManualPaymentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createManualPayment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManualPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof createManualPayment>>>
+    export type CreateManualPaymentMutationBody = BodyType<ManualPaymentInput>
+    export type CreateManualPaymentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Log a manual payment
+ */
+export const useCreateManualPayment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualPayment>>, TError,{data: BodyType<ManualPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createManualPayment>>,
+        TError,
+        {data: BodyType<ManualPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateManualPaymentMutationOptions(options));
+    }
 
 export const getGetDashboardStatsUrl = () => {
 

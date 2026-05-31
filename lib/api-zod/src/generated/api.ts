@@ -542,6 +542,38 @@ export const GetSquareStatusResponse = zod.object({
 
 
 /**
+ * @summary List manual payments
+ */
+export const ListManualPaymentsQueryParams = zod.object({
+  "clientId": zod.coerce.number().nullish()
+})
+
+export const ListManualPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullable(),
+  "clientName": zod.string().nullish(),
+  "amount": zod.number(),
+  "paymentDate": zod.string(),
+  "paymentMethod": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListManualPaymentsResponse = zod.array(ListManualPaymentsResponseItem)
+
+
+/**
+ * @summary Log a manual payment
+ */
+export const CreateManualPaymentBody = zod.object({
+  "clientId": zod.number(),
+  "amount": zod.number(),
+  "paymentDate": zod.string(),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer']),
+  "notes": zod.string().nullish()
+})
+
+
+/**
  * @summary Get dashboard stats
  */
 export const GetDashboardStatsResponse = zod.object({

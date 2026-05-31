@@ -10,6 +10,7 @@ import rentalsRouter from "./rentals";
 import agreementsRouter from "./agreements";
 import squareRouter from "./square";
 import dashboardRouter from "./dashboard";
+import manualPaymentsRouter from "./manual_payments";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(rentalsRouter);
 router.use(agreementsRouter);
 router.use(squareRouter);
 router.use(dashboardRouter);
+router.use(manualPaymentsRouter);
 
 export default router;
