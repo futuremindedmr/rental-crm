@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical } from "lucide-react";
+import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DndContext,
   closestCenter,
@@ -23,8 +24,10 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
 
 const CARD_ORDER_KEY = "dashboard-card-order";
+const METRICS_COLLAPSED_KEY = "dashboard-metrics-collapsed";
 
 type StatCardId =
   | "activeRentals"
@@ -55,6 +58,13 @@ function loadOrder(): StatCardId[] {
     if (Array.isArray(parsed) && parsed.length === DEFAULT_ORDER.length) return parsed;
   } catch {}
   return DEFAULT_ORDER;
+}
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(METRICS_COLLAPSED_KEY) === "true";
+  } catch {}
+  return false;
 }
 
 interface SortableStatCardProps {
@@ -89,6 +99,7 @@ function SortableStatCard({ id, children }: SortableStatCardProps) {
 
 export default function Dashboard() {
   const [cardOrder, setCardOrder] = useState<StatCardId[]>(loadOrder);
+  const [metricsCollapsed, setMetricsCollapsed] = useState<boolean>(loadCollapsed);
 
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: expiringRentals, isLoading: expiringLoading } = useListRentals({ expiringSoon: true });
@@ -113,6 +124,14 @@ export default function Dashboard() {
         return next;
       });
     }
+  }, []);
+
+  const toggleMetrics = useCallback(() => {
+    setMetricsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(METRICS_COLLAPSED_KEY, String(next));
+      return next;
+    });
   }, []);
 
   const getStageBadge = (stage: string) => {
@@ -219,21 +238,39 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleMetrics}
+          className="text-muted-foreground hover:text-foreground gap-1.5"
+        >
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform duration-200", metricsCollapsed && "-rotate-90")}
+          />
+          {metricsCollapsed ? "Show metrics" : "Hide metrics"}
+        </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={cardOrder} strategy={rectSortingStrategy}>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cardOrder.map((id) => (
-              <SortableStatCard key={id} id={id}>
-                {statCards[id]}
-              </SortableStatCard>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          metricsCollapsed ? "max-h-0 opacity-0" : "max-h-[800px] opacity-100",
+        )}
+      >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={cardOrder} strategy={rectSortingStrategy}>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {cardOrder.map((id) => (
+                <SortableStatCard key={id} id={id}>
+                  {statCards[id]}
+                </SortableStatCard>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="col-span-1">
