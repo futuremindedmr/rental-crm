@@ -864,7 +864,7 @@ components:
           type: ["string", "null"]
         stage:
           type: string
-          enum: [contacted, agreement_sent, term_selected, converted]
+          enum: [contacted, agreement_sent, term_selected, application_sent, converted]
         notes:
           type: ["string", "null"]
         createdAt:
@@ -880,7 +880,7 @@ components:
           type: integer
         stage:
           type: string
-          enum: [contacted, agreement_sent, term_selected, converted]
+          enum: [contacted, agreement_sent, term_selected, application_sent, converted]
           default: contacted
         notes:
           type: string
@@ -890,7 +890,7 @@ components:
       properties:
         stage:
           type: string
-          enum: [contacted, agreement_sent, term_selected, converted]
+          enum: [contacted, agreement_sent, term_selected, application_sent, converted]
         notes:
           type: ["string", "null"]
 

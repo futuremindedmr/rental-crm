@@ -19,7 +19,8 @@ export default function Dashboard() {
     switch (stage) {
       case "contacted": return <Badge variant="outline" className="bg-blue-100 text-blue-800">Contacted</Badge>;
       case "agreement_sent": return <Badge variant="outline" className="bg-purple-100 text-purple-800">Agreement Sent</Badge>;
-      case "term_selected": return <Badge variant="outline" className="bg-orange-100 text-orange-800">Term Selected</Badge>;
+      case "term_selected": return <Badge variant="outline" className="bg-orange-100 text-orange-800">Quoted</Badge>;
+      case "application_sent": return <Badge variant="outline" className="bg-amber-100 text-amber-800">Application Sent</Badge>;
       case "converted": return <Badge variant="outline" className="bg-green-100 text-green-800">Converted</Badge>;
       default: return <Badge>{stage}</Badge>;
     }

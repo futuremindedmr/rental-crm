@@ -16,13 +16,14 @@ import { format } from "date-fns";
 const stages = [
   { id: "contacted", label: "Contacted", color: "bg-blue-100 border-blue-200 text-blue-900" },
   { id: "agreement_sent", label: "Agreement Sent", color: "bg-purple-100 border-purple-200 text-purple-900" },
-  { id: "term_selected", label: "Term Selected", color: "bg-orange-100 border-orange-200 text-orange-900" },
+  { id: "term_selected", label: "Quoted", color: "bg-orange-100 border-orange-200 text-orange-900" },
+  { id: "application_sent", label: "Application Sent", color: "bg-amber-100 border-amber-200 text-amber-900" },
   { id: "converted", label: "Converted", color: "bg-green-100 border-green-200 text-green-900" },
 ] as const;
 
 const newLeadSchema = z.object({
   clientId: z.coerce.number().min(1, "Client is required"),
-  stage: z.enum(["contacted", "agreement_sent", "term_selected", "converted"]),
+  stage: z.enum(["contacted", "agreement_sent", "term_selected", "application_sent", "converted"]),
   notes: z.string().optional()
 });
 
@@ -132,7 +133,8 @@ export default function Leads() {
                       <SelectContent>
                         <SelectItem value="contacted">Contacted</SelectItem>
                         <SelectItem value="agreement_sent">Agreement Sent</SelectItem>
-                        <SelectItem value="term_selected">Term Selected</SelectItem>
+                        <SelectItem value="term_selected">Quoted</SelectItem>
+                        <SelectItem value="application_sent">Application Sent</SelectItem>
                         <SelectItem value="converted">Converted</SelectItem>
                       </SelectContent>
                     </Select>

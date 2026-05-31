@@ -253,7 +253,7 @@ export const ListLeadsResponseItem = zod.object({
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
   "clientEmail": zod.string().nullish(),
-  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'converted']),
+  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'application_sent', 'converted']),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -268,7 +268,7 @@ export const createLeadBodyStageDefault = `contacted`;
 
 export const CreateLeadBody = zod.object({
   "clientId": zod.number(),
-  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'converted']).default(createLeadBodyStageDefault),
+  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'application_sent', 'converted']).default(createLeadBodyStageDefault),
   "notes": zod.string().optional()
 })
 
@@ -286,7 +286,7 @@ export const GetLeadResponse = zod.object({
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
   "clientEmail": zod.string().nullish(),
-  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'converted']),
+  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'application_sent', 'converted']),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -301,7 +301,7 @@ export const UpdateLeadParams = zod.object({
 })
 
 export const UpdateLeadBody = zod.object({
-  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'converted']).optional(),
+  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'application_sent', 'converted']).optional(),
   "notes": zod.string().nullish()
 })
 
@@ -311,7 +311,7 @@ export const UpdateLeadResponse = zod.object({
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
   "clientEmail": zod.string().nullish(),
-  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'converted']),
+  "stage": zod.enum(['contacted', 'agreement_sent', 'term_selected', 'application_sent', 'converted']),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()

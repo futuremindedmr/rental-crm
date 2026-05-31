@@ -13,5 +13,6 @@ export const LeadInputStage = {
   contacted: 'contacted',
   agreement_sent: 'agreement_sent',
   term_selected: 'term_selected',
+  application_sent: 'application_sent',
   converted: 'converted',
 } as const;

@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { clientsTable } from "./clients";
 import { tenantsTable } from "./tenants";
 
-export const leadStageEnum = ["contacted", "agreement_sent", "term_selected", "converted"] as const;
+export const leadStageEnum = ["contacted", "agreement_sent", "term_selected", "application_sent", "converted"] as const;
 
 export const leadsTable = pgTable("leads", {
   id: serial("id").primaryKey(),
