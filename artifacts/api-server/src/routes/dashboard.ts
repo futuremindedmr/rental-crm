@@ -14,6 +14,14 @@ function computeMonthsRemaining(startDate: string, termMonths: number): number {
   return Math.max(0, termMonths - monthsElapsed);
 }
 
+function computeDaysRemaining(startDate: string, termMonths: number): number {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + termMonths);
+  const now = new Date();
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
 router.get("/dashboard/stats", async (req, res) => {
   const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
@@ -55,8 +63,8 @@ router.get("/dashboard/stats", async (req, res) => {
 
   const activeRentals = allRentals.filter(r => computeMonthsRemaining(r.startDate, r.termMonths) > 0);
   const expiringSoon = activeRentals.filter(r => {
-    const rem = computeMonthsRemaining(r.startDate, r.termMonths);
-    return rem <= 2 && rem > 0;
+    const days = computeDaysRemaining(r.startDate, r.termMonths);
+    return days <= 60 && days > 0;
   });
 
   res.json({
