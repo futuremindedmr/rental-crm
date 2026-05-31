@@ -83,6 +83,34 @@ export interface ClientUpdate {
   notes?: string | null;
 }
 
+export interface Property {
+  id: number;
+  name: string;
+  /** @nullable */
+  address?: string | null;
+  unitCount: number;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface PropertyInput {
+  /** @minLength 1 */
+  name: string;
+  address?: string;
+  unitCount?: number;
+  notes?: string;
+}
+
+export interface PropertyUpdate {
+  name?: string;
+  /** @nullable */
+  address?: string | null;
+  unitCount?: number;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export type LeadStage = typeof LeadStage[keyof typeof LeadStage];
 
 

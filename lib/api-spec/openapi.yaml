@@ -57,6 +57,29 @@ paths:
                 $ref: '#/components/schemas/TenantEnvelope'
         '401':
           description: Unauthorized
+    patch:
+      tags: [tenants]
+      operationId: updateCurrentTenant
+      summary: Update the current user's business account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantInput'
+      responses:
+        '200':
+          description: Updated tenant info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantEnvelope'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '403':
+          description: No business account found
 
   /tenants:
     post:
@@ -183,6 +206,79 @@ paths:
       operationId: deleteClient
       tags: [clients]
       summary: Delete a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Properties ─────────────────────────────────────────────────────────────
+  /properties:
+    get:
+      operationId: listProperties
+      tags: [properties]
+      summary: List properties
+      responses:
+        "200":
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+    post:
+      operationId: createProperty
+      tags: [properties]
+      summary: Create a property
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /properties/{id}:
+    patch:
+      operationId: updateProperty
+      tags: [properties]
+      summary: Update a property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PropertyUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProperty
+      tags: [properties]
+      summary: Delete a property
       parameters:
         - name: id
           in: path
@@ -695,6 +791,51 @@ components:
           enum: [lead, active_renter, past_customer]
         squareCustomerId:
           type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── Property ─────────────────────────────────────────────────────────────
+    Property:
+      type: object
+      required: [id, name, unitCount, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        unitCount:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PropertyInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        address:
+          type: string
+        unitCount:
+          type: integer
+          default: 0
+        notes:
+          type: string
+
+    PropertyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        unitCount:
+          type: integer
         notes:
           type: ["string", "null"]
 

@@ -1,6 +1,7 @@
 export * from "./tenants";
 export * from "./auth";
 export * from "./clients";
+export * from "./properties";
 export * from "./leads";
 export * from "./rentals";
 export * from "./rental_agreements";

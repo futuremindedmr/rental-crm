@@ -1,46 +1,32 @@
-import React, { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useGetCurrentTenant, getGetCurrentTenantQueryKey } from "@workspace/api-client-react";
 
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import ClientDetail from "@/pages/client-detail";
+import Properties from "@/pages/properties";
 import Leads from "@/pages/leads";
 import Rentals from "@/pages/rentals";
+import Payments from "@/pages/payments";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import Onboarding from "@/pages/onboarding";
 
 const queryClient = new QueryClient();
 
-interface Tenant {
-  id: number;
-  name: string;
-}
-
 function MainApp() {
   const { isLoading, isAuthenticated, login } = useAuth();
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [tenantLoading, setTenantLoading] = useState(true);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setTenantLoading(false);
-      return;
-    }
-    fetch("/api/tenants/current", { credentials: "include" })
-      .then(r => r.json())
-      .then((data: { tenant: Tenant | null }) => {
-        setTenant(data.tenant ?? null);
-      })
-      .catch(() => setTenant(null))
-      .finally(() => setTenantLoading(false));
-  }, [isAuthenticated]);
+  const qc = useQueryClient();
+  const { data: tenantEnvelope, isLoading: tenantLoading } = useGetCurrentTenant({
+    query: { enabled: isAuthenticated, queryKey: getGetCurrentTenantQueryKey() },
+  });
+  const tenant = tenantEnvelope?.tenant ?? null;
 
   if (isLoading || (isAuthenticated && tenantLoading)) {
     return (
@@ -55,7 +41,11 @@ function MainApp() {
   }
 
   if (!tenant) {
-    return <Onboarding onCreated={setTenant} />;
+    return (
+      <Onboarding
+        onCreated={(t) => qc.setQueryData(getGetCurrentTenantQueryKey(), { tenant: t })}
+      />
+    );
   }
 
   return (
@@ -64,8 +54,10 @@ function MainApp() {
         <Route path="/" component={Dashboard} />
         <Route path="/clients" component={Clients} />
         <Route path="/clients/:id" component={ClientDetail} />
+        <Route path="/properties" component={Properties} />
         <Route path="/leads" component={Leads} />
         <Route path="/rentals" component={Rentals} />
+        <Route path="/payments" component={Payments} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

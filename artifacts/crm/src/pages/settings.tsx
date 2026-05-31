@@ -1,4 +1,48 @@
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetCurrentTenant,
+  useUpdateCurrentTenant,
+  getGetCurrentTenantQueryKey,
+} from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+
 export default function Settings() {
+  const qc = useQueryClient();
+  const { data: tenantEnvelope, isLoading } = useGetCurrentTenant();
+  const tenant = tenantEnvelope?.tenant ?? null;
+  const updateTenant = useUpdateCurrentTenant();
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (tenant?.name) setName(tenant.name);
+  }, [tenant?.name]);
+
+  const dirty = tenant ? name.trim() !== tenant.name : false;
+
+  const handleSave = () => {
+    if (!name.trim() || !dirty) return;
+    updateTenant.mutate(
+      { data: { name: name.trim() } },
+      {
+        onSuccess: (env) => {
+          qc.setQueryData(getGetCurrentTenantQueryKey(), env);
+          toast({ title: "Saved", description: "Business name updated." });
+        },
+        onError: (err) =>
+          toast({
+            title: "Error",
+            description: err instanceof Error ? err.message : "Failed to update",
+            variant: "destructive",
+          }),
+      }
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
@@ -10,13 +54,26 @@ export default function Settings() {
         <div className="border rounded-lg p-6 space-y-4 bg-card">
           <h3 className="text-lg font-medium">Company Profile</h3>
           <div className="grid gap-4">
-            <div className="grid gap-1">
-              <label className="text-sm font-medium">Company Name</label>
-              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md border">RentTrack LLC</div>
+            <div className="grid gap-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your business name"
+                disabled={isLoading || updateTenant.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                This name appears across RentTrack, including the sidebar.
+              </p>
             </div>
-            <div className="grid gap-1">
-              <label className="text-sm font-medium">Support Email</label>
-              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md border">support@renttrack.app</div>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSave}
+                disabled={!dirty || !name.trim() || updateTenant.isPending}
+              >
+                {updateTenant.isPending ? "Saving..." : "Save changes"}
+              </Button>
             </div>
           </div>
         </div>

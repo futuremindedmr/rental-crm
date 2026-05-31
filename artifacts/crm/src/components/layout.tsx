@@ -2,8 +2,10 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
   Users,
+  Building2,
   Inbox,
   FileText,
+  CreditCard,
   Settings,
   KeySquare,
   LogOut,
@@ -19,8 +21,10 @@ interface LayoutProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Users },
+  { name: "Properties", href: "/properties", icon: Building2 },
   { name: "Leads", href: "/leads", icon: Inbox },
   { name: "Rentals", href: "/rentals", icon: FileText },
+  { name: "Payments", href: "/payments", icon: CreditCard },
 ];
 
 export function Layout({ children, tenantName }: LayoutProps) {

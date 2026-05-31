@@ -35,6 +35,25 @@ export const GetCurrentTenantResponse = zod.object({
 
 
 /**
+ * @summary Update the current user's business account
+ */
+
+
+
+export const UpdateCurrentTenantBody = zod.object({
+  "name": zod.string().min(1)
+})
+
+export const UpdateCurrentTenantResponse = zod.object({
+  "tenant": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+}),zod.null()])
+})
+
+
+/**
  * @summary Create a new business account
  */
 
@@ -148,6 +167,66 @@ export const UpdateClientResponse = zod.object({
  * @summary Delete a client
  */
 export const DeleteClientParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List properties
+ */
+export const ListPropertiesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "address": zod.string().nullish(),
+  "unitCount": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListPropertiesResponse = zod.array(ListPropertiesResponseItem)
+
+
+/**
+ * @summary Create a property
+ */
+
+export const createPropertyBodyUnitCountDefault = 0;
+
+export const CreatePropertyBody = zod.object({
+  "name": zod.string().min(1),
+  "address": zod.string().optional(),
+  "unitCount": zod.number().default(createPropertyBodyUnitCountDefault),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a property
+ */
+export const UpdatePropertyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdatePropertyBody = zod.object({
+  "name": zod.string().optional(),
+  "address": zod.string().nullish(),
+  "unitCount": zod.number().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdatePropertyResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "address": zod.string().nullish(),
+  "unitCount": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a property
+ */
+export const DeletePropertyParams = zod.object({
   "id": zod.coerce.number()
 })
 

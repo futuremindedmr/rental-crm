@@ -30,6 +30,38 @@ router.get("/tenants/current", async (req, res) => {
   res.json({ tenant: tenant ?? null });
 });
 
+router.patch("/tenants/current", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { name } = req.body;
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    res.status(400).json({ error: "Business name is required" });
+    return;
+  }
+
+  const [user] = await db
+    .select({ tenantId: usersTable.tenantId })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.id))
+    .limit(1);
+
+  if (!user?.tenantId) {
+    res.status(403).json({ error: "No business account found" });
+    return;
+  }
+
+  const [tenant] = await db
+    .update(tenantsTable)
+    .set({ name: name.trim() })
+    .where(eq(tenantsTable.id, user.tenantId))
+    .returning();
+
+  res.json({ tenant: tenant ?? null });
+});
+
 router.post("/tenants", async (req, res) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
