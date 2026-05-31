@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { clientsTable, leadsTable, rentalsTable, squarePaymentsTable } from "@workspace/db";
-import { sql, ne } from "drizzle-orm";
+import { sql, and, eq } from "drizzle-orm";
+import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
@@ -13,7 +14,10 @@ function computeMonthsRemaining(startDate: string, termMonths: number): number {
   return Math.max(0, termMonths - monthsElapsed);
 }
 
-router.get("/dashboard/stats", async (_req, res) => {
+router.get("/dashboard/stats", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const now = new Date();
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -25,14 +29,19 @@ router.get("/dashboard/stats", async (_req, res) => {
     [lastMonthRow],
     allRentals,
   ] = await Promise.all([
-    db.select({ count: sql<number>`count(*)::int` }).from(clientsTable),
+    db.select({ count: sql<number>`count(*)::int` }).from(clientsTable)
+      .where(eq(clientsTable.tenantId, tenantId)),
     db.select({ count: sql<number>`count(*)::int` }).from(leadsTable)
-      .where(sql`stage != 'converted'`),
+      .where(and(eq(leadsTable.tenantId, tenantId), sql`stage != 'converted'`)),
     db.select({ total: sql<number>`coalesce(sum(amount::numeric), 0)` }).from(squarePaymentsTable)
-      .where(sql`status = 'COMPLETED'`),
+      .where(and(eq(squarePaymentsTable.tenantId, tenantId), sql`status = 'COMPLETED'`)),
     db.select({ total: sql<number>`coalesce(sum(amount::numeric), 0)` }).from(squarePaymentsTable)
-      .where(sql`status = 'COMPLETED' AND payment_date >= ${startOfLastMonth.toISOString().slice(0,10)} AND payment_date < ${endOfLastMonth.toISOString().slice(0,10)}`),
-    db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths }).from(rentalsTable),
+      .where(and(
+        eq(squarePaymentsTable.tenantId, tenantId),
+        sql`status = 'COMPLETED' AND payment_date >= ${startOfLastMonth.toISOString().slice(0,10)} AND payment_date < ${endOfLastMonth.toISOString().slice(0,10)}`,
+      )),
+    db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths }).from(rentalsTable)
+      .where(eq(rentalsTable.tenantId, tenantId)),
   ]);
 
   const activeRentals = allRentals.filter(r => computeMonthsRemaining(r.startDate, r.termMonths) > 0);
@@ -51,7 +60,10 @@ router.get("/dashboard/stats", async (_req, res) => {
   });
 });
 
-router.get("/dashboard/recent-payments", async (_req, res) => {
+router.get("/dashboard/recent-payments", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const rows = await db
     .select({
       id: squarePaymentsTable.id,
@@ -66,6 +78,7 @@ router.get("/dashboard/recent-payments", async (_req, res) => {
     })
     .from(squarePaymentsTable)
     .leftJoin(clientsTable, sql`${squarePaymentsTable.clientId} = ${clientsTable.id}`)
+    .where(eq(squarePaymentsTable.tenantId, tenantId))
     .orderBy(sql`${squarePaymentsTable.createdAt} desc`)
     .limit(10);
 

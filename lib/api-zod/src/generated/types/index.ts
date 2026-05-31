@@ -7,6 +7,8 @@
  */
 
 export * from './agreementInput';
+export * from './authUser';
+export * from './authUserEnvelope';
 export * from './client';
 export * from './clientInput';
 export * from './clientInputStatus';
@@ -35,5 +37,8 @@ export * from './squareInvoice';
 export * from './squarePayment';
 export * from './squareStatus';
 export * from './squareSyncResult';
+export * from './tenant';
+export * from './tenantEnvelope';
+export * from './tenantInput';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';

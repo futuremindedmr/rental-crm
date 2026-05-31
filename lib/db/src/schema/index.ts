@@ -1,3 +1,5 @@
+export * from "./tenants";
+export * from "./auth";
 export * from "./clients";
 export * from "./leads";
 export * from "./rentals";

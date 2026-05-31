@@ -8,6 +8,10 @@ servers:
   - url: /api
     description: Base API path
 tags:
+  - name: Auth
+    description: Browser authentication endpoints.
+  - name: tenants
+    description: Business account (tenant) management.
   - name: health
     description: Health operations
   - name: clients
@@ -26,6 +30,57 @@ tags:
     description: Object storage upload and serving endpoints.
 
 paths:
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+
+  /tenants/current:
+    get:
+      tags: [tenants]
+      operationId: getCurrentTenant
+      summary: Get the current user's business account
+      responses:
+        '200':
+          description: Current tenant info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantEnvelope'
+        '401':
+          description: Unauthorized
+
+  /tenants:
+    post:
+      tags: [tenants]
+      operationId: createTenant
+      summary: Create a new business account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantInput'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantEnvelope'
+        '400':
+          description: Invalid input
+        '409':
+          description: Already belongs to a business account
+
   /healthz:
     get:
       operationId: healthCheck
@@ -892,3 +947,58 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/UploadUrlRequest'
+
+    # ── Auth ─────────────────────────────────────────────────────────────────
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        firstName:
+          type: [string, 'null']
+        lastName:
+          type: [string, 'null']
+        profileImageUrl:
+          type: [string, 'null']
+
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+
+    # ── Tenants ───────────────────────────────────────────────────────────────
+    Tenant:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+
+    TenantEnvelope:
+      type: object
+      required: [tenant]
+      properties:
+        tenant:
+          oneOf:
+            - $ref: '#/components/schemas/Tenant'
+            - type: 'null'
+
+    TenantInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1

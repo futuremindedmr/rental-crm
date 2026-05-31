@@ -1,8 +1,10 @@
 import { pgTable, text, serial, integer, numeric, timestamp } from "drizzle-orm/pg-core";
 import { clientsTable } from "./clients";
+import { tenantsTable } from "./tenants";
 
 export const squareInvoicesTable = pgTable("square_invoices", {
   id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenantsTable.id),
   clientId: integer("client_id").references(() => clientsTable.id, { onDelete: "set null" }),
   squareInvoiceId: text("square_invoice_id").notNull().unique(),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),

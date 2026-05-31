@@ -1,9 +1,11 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { tenantsTable } from "./tenants";
 
 export const clientStatusEnum = ["lead", "active_renter", "past_customer"] as const;
 
 export const clientsTable = pgTable("clients", {
   id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenantsTable.id),
   name: text("name").notNull(),
   address: text("address"),
   phone: text("phone"),

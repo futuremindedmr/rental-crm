@@ -10,6 +10,7 @@ import {
   UpdateRentalBody,
   DeleteRentalParams,
 } from "@workspace/api-zod";
+import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
@@ -43,11 +44,14 @@ function formatRental(row: {
 }
 
 router.get("/rentals", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = ListRentalsQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
   const { clientId, expiringSoon } = parsed.data;
 
-  const conditions = [];
+  const conditions = [eq(rentalsTable.tenantId, tenantId)];
   if (clientId != null) conditions.push(eq(rentalsTable.clientId, clientId));
 
   const rows = await db
@@ -64,7 +68,7 @@ router.get("/rentals", async (req, res) => {
     })
     .from(rentalsTable)
     .leftJoin(clientsTable, eq(rentalsTable.clientId, clientsTable.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(sql`${rentalsTable.createdAt} desc`);
 
   let result = rows.map(formatRental);
@@ -76,11 +80,15 @@ router.get("/rentals", async (req, res) => {
 });
 
 router.post("/rentals", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = CreateRentalBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
 
   const [rental] = await db.insert(rentalsTable).values({
     ...parsed.data,
+    tenantId,
     monthlyRate: String(parsed.data.monthlyRate),
   }).returning();
 
@@ -90,6 +98,9 @@ router.post("/rentals", async (req, res) => {
 });
 
 router.get("/rentals/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = GetRentalParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
 
@@ -107,7 +118,7 @@ router.get("/rentals/:id", async (req, res) => {
     })
     .from(rentalsTable)
     .leftJoin(clientsTable, eq(rentalsTable.clientId, clientsTable.id))
-    .where(eq(rentalsTable.id, parsed.data.id))
+    .where(and(eq(rentalsTable.id, parsed.data.id), eq(rentalsTable.tenantId, tenantId)))
     .limit(1);
 
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
@@ -115,6 +126,9 @@ router.get("/rentals/:id", async (req, res) => {
 });
 
 router.patch("/rentals/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const paramParsed = UpdateRentalParams.safeParse({ id: Number(req.params.id) });
   if (!paramParsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const bodyParsed = UpdateRentalBody.safeParse(req.body);
@@ -126,7 +140,7 @@ router.patch("/rentals/:id", async (req, res) => {
   const [updated] = await db
     .update(rentalsTable)
     .set(updateData)
-    .where(eq(rentalsTable.id, paramParsed.data.id))
+    .where(and(eq(rentalsTable.id, paramParsed.data.id), eq(rentalsTable.tenantId, tenantId)))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
 
@@ -136,9 +150,13 @@ router.patch("/rentals/:id", async (req, res) => {
 });
 
 router.delete("/rentals/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = DeleteRentalParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
-  await db.delete(rentalsTable).where(eq(rentalsTable.id, parsed.data.id));
+  await db.delete(rentalsTable)
+    .where(and(eq(rentalsTable.id, parsed.data.id), eq(rentalsTable.tenantId, tenantId)));
   res.status(204).send();
 });
 

@@ -10,6 +10,7 @@ import {
   UpdateLeadBody,
   DeleteLeadParams,
 } from "@workspace/api-zod";
+import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
@@ -40,11 +41,14 @@ const selectLeadWithClient = {
 };
 
 router.get("/leads", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = ListLeadsQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
   const { stage, clientId } = parsed.data;
 
-  const conditions = [];
+  const conditions = [eq(leadsTable.tenantId, tenantId)];
   if (stage) conditions.push(eq(leadsTable.stage, stage));
   if (clientId != null) conditions.push(eq(leadsTable.clientId, clientId));
 
@@ -52,17 +56,20 @@ router.get("/leads", async (req, res) => {
     .select(selectLeadWithClient)
     .from(leadsTable)
     .leftJoin(clientsTable, eq(leadsTable.clientId, clientsTable.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(sql`${leadsTable.createdAt} desc`);
 
   res.json(rows.map(formatLead));
 });
 
 router.post("/leads", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = CreateLeadBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
 
-  const [lead] = await db.insert(leadsTable).values(parsed.data).returning();
+  const [lead] = await db.insert(leadsTable).values({ ...parsed.data, tenantId }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, lead.clientId)).limit(1);
 
   res.status(201).json(formatLead({
@@ -74,6 +81,9 @@ router.post("/leads", async (req, res) => {
 });
 
 router.get("/leads/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = GetLeadParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
 
@@ -81,7 +91,7 @@ router.get("/leads/:id", async (req, res) => {
     .select(selectLeadWithClient)
     .from(leadsTable)
     .leftJoin(clientsTable, eq(leadsTable.clientId, clientsTable.id))
-    .where(eq(leadsTable.id, parsed.data.id))
+    .where(and(eq(leadsTable.id, parsed.data.id), eq(leadsTable.tenantId, tenantId)))
     .limit(1);
 
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
@@ -89,6 +99,9 @@ router.get("/leads/:id", async (req, res) => {
 });
 
 router.patch("/leads/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const paramParsed = UpdateLeadParams.safeParse({ id: Number(req.params.id) });
   if (!paramParsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const bodyParsed = UpdateLeadBody.safeParse(req.body);
@@ -97,7 +110,7 @@ router.patch("/leads/:id", async (req, res) => {
   const [updated] = await db
     .update(leadsTable)
     .set({ ...bodyParsed.data, updatedAt: new Date() })
-    .where(eq(leadsTable.id, paramParsed.data.id))
+    .where(and(eq(leadsTable.id, paramParsed.data.id), eq(leadsTable.tenantId, tenantId)))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
 
@@ -112,9 +125,13 @@ router.patch("/leads/:id", async (req, res) => {
 });
 
 router.delete("/leads/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = DeleteLeadParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
-  await db.delete(leadsTable).where(eq(leadsTable.id, parsed.data.id));
+  await db.delete(leadsTable)
+    .where(and(eq(leadsTable.id, parsed.data.id), eq(leadsTable.tenantId, tenantId)));
   res.status(204).send();
 });
 

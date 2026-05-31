@@ -265,6 +265,37 @@ export interface UploadUrlResponse {
   metadata?: UploadUrlRequest;
 }
 
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  profileImageUrl: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface Tenant {
+  id: number;
+  name: string;
+  createdAt: string;
+}
+
+export interface TenantEnvelope {
+  tenant: Tenant | null;
+}
+
+export interface TenantInput {
+  /** @minLength 1 */
+  name: string;
+}
+
 export type ListClientsParams = {
 search?: string;
 /**

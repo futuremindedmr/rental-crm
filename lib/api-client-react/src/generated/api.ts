@@ -21,6 +21,7 @@ import type {
 
 import type {
   AgreementInput,
+  AuthUserEnvelope,
   Client,
   ClientInput,
   ClientUpdate,
@@ -43,6 +44,8 @@ import type {
   SquarePayment,
   SquareStatus,
   SquareSyncResult,
+  TenantEnvelope,
+  TenantInput,
   UploadUrlRequest,
   UploadUrlResponse
 } from './api.schemas';
@@ -58,6 +61,231 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getGetCurrentAuthUserUrl = () => {
+
+
+
+
+  return `/api/auth/user`
+}
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const getCurrentAuthUser = async ( options?: RequestInit): Promise<AuthUserEnvelope> => {
+
+  return customFetch<AuthUserEnvelope>(getGetCurrentAuthUserUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentAuthUserQueryKey = () => {
+    return [
+    `/api/auth/user`
+    ] as const;
+    }
+
+
+export const getGetCurrentAuthUserQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentAuthUser>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentAuthUserQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentAuthUser>>> = ({ signal }) => getCurrentAuthUser({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentAuthUserQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentAuthUser>>>
+export type GetCurrentAuthUserQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the currently authenticated user
+ */
+
+export function useGetCurrentAuthUser<TData = Awaited<ReturnType<typeof getCurrentAuthUser>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentAuthUserQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCurrentTenantUrl = () => {
+
+
+
+
+  return `/api/tenants/current`
+}
+
+/**
+ * @summary Get the current user's business account
+ */
+export const getCurrentTenant = async ( options?: RequestInit): Promise<TenantEnvelope> => {
+
+  return customFetch<TenantEnvelope>(getGetCurrentTenantUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentTenantQueryKey = () => {
+    return [
+    `/api/tenants/current`
+    ] as const;
+    }
+
+
+export const getGetCurrentTenantQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentTenant>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentTenant>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentTenantQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentTenant>>> = ({ signal }) => getCurrentTenant({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentTenant>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentTenantQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentTenant>>>
+export type GetCurrentTenantQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the current user's business account
+ */
+
+export function useGetCurrentTenant<TData = Awaited<ReturnType<typeof getCurrentTenant>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentTenant>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentTenantQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateTenantUrl = () => {
+
+
+
+
+  return `/api/tenants`
+}
+
+/**
+ * @summary Create a new business account
+ */
+export const createTenant = async (tenantInput: TenantInput, options?: RequestInit): Promise<TenantEnvelope> => {
+
+  return customFetch<TenantEnvelope>(getCreateTenantUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tenantInput,)
+  }
+);}
+
+
+
+
+export const getCreateTenantMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTenant>>, TError,{data: BodyType<TenantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTenant>>, TError,{data: BodyType<TenantInput>}, TContext> => {
+
+const mutationKey = ['createTenant'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTenant>>, {data: BodyType<TenantInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTenant(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTenantMutationResult = NonNullable<Awaited<ReturnType<typeof createTenant>>>
+    export type CreateTenantMutationBody = BodyType<TenantInput>
+    export type CreateTenantMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a new business account
+ */
+export const useCreateTenant = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTenant>>, TError,{data: BodyType<TenantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTenant>>,
+        TError,
+        {data: BodyType<TenantInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTenantMutationOptions(options));
+    }
 
 export const getHealthCheckUrl = () => {
 

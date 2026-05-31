@@ -10,6 +10,7 @@ import {
   UpdateClientBody,
   DeleteClientParams,
 } from "@workspace/api-zod";
+import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
@@ -22,17 +23,20 @@ function computeMonthsRemaining(startDate: string, termMonths: number): number {
 }
 
 router.get("/clients", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = ListClientsQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "Invalid query params" }); return; }
   const { search, status } = parsed.data;
 
-  const conditions = [];
+  const conditions = [eq(clientsTable.tenantId, tenantId)];
   if (search) {
     conditions.push(or(
       ilike(clientsTable.name, `%${search}%`),
       ilike(clientsTable.email, `%${search}%`),
       ilike(clientsTable.phone, `%${search}%`),
-    ));
+    )!);
   }
   if (status) conditions.push(eq(clientsTable.status, status));
 
@@ -49,16 +53,16 @@ router.get("/clients", async (req, res) => {
       createdAt: clientsTable.createdAt,
     })
     .from(clientsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(sql`${clientsTable.createdAt} desc`);
 
-  // Get active rental counts
   const rentalCounts = await db
     .select({
       clientId: rentalsTable.clientId,
       cnt: sql<number>`count(*)::int`,
     })
     .from(rentalsTable)
+    .where(eq(rentalsTable.tenantId, tenantId))
     .groupBy(rentalsTable.clientId);
 
   const countMap = new Map(rentalCounts.map(r => [r.clientId, r.cnt]));
@@ -71,28 +75,39 @@ router.get("/clients", async (req, res) => {
 });
 
 router.post("/clients", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = CreateClientBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
-  const [client] = await db.insert(clientsTable).values(parsed.data).returning();
+  const [client] = await db.insert(clientsTable).values({ ...parsed.data, tenantId }).returning();
   res.status(201).json({ ...client, activeRentalCount: 0, createdAt: client.createdAt.toISOString() });
 });
 
 router.get("/clients/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = GetClientParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, parsed.data.id)).limit(1);
+  const [client] = await db.select().from(clientsTable)
+    .where(and(eq(clientsTable.id, parsed.data.id), eq(clientsTable.tenantId, tenantId)))
+    .limit(1);
   if (!client) { res.status(404).json({ error: "Not found" }); return; }
 
   const [countRow] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(rentalsTable)
-    .where(eq(rentalsTable.clientId, client.id));
+    .where(and(eq(rentalsTable.clientId, client.id), eq(rentalsTable.tenantId, tenantId)));
 
   res.json({ ...client, activeRentalCount: countRow?.cnt ?? 0, createdAt: client.createdAt.toISOString() });
 });
 
 router.patch("/clients/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const paramParsed = UpdateClientParams.safeParse({ id: Number(req.params.id) });
   if (!paramParsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const bodyParsed = UpdateClientBody.safeParse(req.body);
@@ -101,22 +116,26 @@ router.patch("/clients/:id", async (req, res) => {
   const [updated] = await db
     .update(clientsTable)
     .set(bodyParsed.data)
-    .where(eq(clientsTable.id, paramParsed.data.id))
+    .where(and(eq(clientsTable.id, paramParsed.data.id), eq(clientsTable.tenantId, tenantId)))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
 
   const [countRow] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(rentalsTable)
-    .where(eq(rentalsTable.clientId, updated.id));
+    .where(and(eq(rentalsTable.clientId, updated.id), eq(rentalsTable.tenantId, tenantId)));
 
   res.json({ ...updated, activeRentalCount: countRow?.cnt ?? 0, createdAt: updated.createdAt.toISOString() });
 });
 
 router.delete("/clients/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
   const parsed = DeleteClientParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
-  await db.delete(clientsTable).where(eq(clientsTable.id, parsed.data.id));
+  await db.delete(clientsTable)
+    .where(and(eq(clientsTable.id, parsed.data.id), eq(clientsTable.tenantId, tenantId)));
   res.status(204).send();
 });
 

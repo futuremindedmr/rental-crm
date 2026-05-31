@@ -1,8 +1,10 @@
 import { pgTable, text, serial, integer, numeric, timestamp } from "drizzle-orm/pg-core";
 import { clientsTable } from "./clients";
+import { tenantsTable } from "./tenants";
 
 export const rentalsTable = pgTable("rentals", {
   id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenantsTable.id),
   clientId: integer("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
   unitDescription: text("unit_description"),
   startDate: text("start_date").notNull(),

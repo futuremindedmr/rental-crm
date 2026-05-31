@@ -9,6 +9,43 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "email": zod.string().email().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Get the current user's business account
+ */
+export const GetCurrentTenantResponse = zod.object({
+  "tenant": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.string()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Create a new business account
+ */
+
+
+
+export const CreateTenantBody = zod.object({
+  "name": zod.string().min(1)
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
