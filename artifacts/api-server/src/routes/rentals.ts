@@ -14,20 +14,31 @@ import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
-function computeMonthsRemaining(startDate: string, termMonths: number): number {
-  const start = new Date(startDate);
-  const now = new Date();
-  const monthsElapsed =
-    (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-  return Math.max(0, termMonths - monthsElapsed);
-}
-
-function computeDaysRemaining(startDate: string, termMonths: number): number {
+function effectiveEndDate(startDate: string, termMonths: number, endDate: string | null): Date {
+  if (endDate) return new Date(endDate);
   const start = new Date(startDate);
   const end = new Date(start);
   end.setMonth(end.getMonth() + termMonths);
+  return end;
+}
+
+function computeMonthsRemaining(startDate: string, termMonths: number, endDate: string | null): number {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
+  const now = new Date();
+  if (now >= end) return 0;
+  const months = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth());
+  return Math.max(0, months);
+}
+
+function computeDaysRemaining(startDate: string, termMonths: number, endDate: string | null): number {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
   const now = new Date();
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function computeIsMonthToMonth(startDate: string, termMonths: number, endDate: string | null): boolean {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
+  return new Date() >= end;
 }
 
 function formatRental(
@@ -38,19 +49,21 @@ function formatRental(
     unitDescription: string | null;
     startDate: string;
     termMonths: number;
+    endDate: string | null;
     monthlyRate: string;
     notes: string | null;
     createdAt: Date;
   },
   paymentStatus: string | null = null,
 ) {
-  const monthsRemaining = computeMonthsRemaining(row.startDate, row.termMonths);
-  const daysRemaining = computeDaysRemaining(row.startDate, row.termMonths);
+  const monthsRemaining = computeMonthsRemaining(row.startDate, row.termMonths, row.endDate);
+  const daysRemaining = computeDaysRemaining(row.startDate, row.termMonths, row.endDate);
   return {
     ...row,
     monthlyRate: Number(row.monthlyRate),
     monthsRemaining,
     isExpiringSoon: daysRemaining <= 60 && daysRemaining > 0,
+    isMonthToMonth: computeIsMonthToMonth(row.startDate, row.termMonths, row.endDate),
     createdAt: row.createdAt.toISOString(),
     paymentStatus,
   };
@@ -125,6 +138,7 @@ router.get("/rentals", async (req, res) => {
       unitDescription: rentalsTable.unitDescription,
       startDate: rentalsTable.startDate,
       termMonths: rentalsTable.termMonths,
+      endDate: rentalsTable.endDate,
       monthlyRate: rentalsTable.monthlyRate,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,
@@ -178,6 +192,7 @@ router.get("/rentals/:id", async (req, res) => {
       unitDescription: rentalsTable.unitDescription,
       startDate: rentalsTable.startDate,
       termMonths: rentalsTable.termMonths,
+      endDate: rentalsTable.endDate,
       monthlyRate: rentalsTable.monthlyRate,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,

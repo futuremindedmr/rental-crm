@@ -33,6 +33,8 @@ export * from './listSquarePaymentsParams';
 export * from './manualPayment';
 export * from './manualPaymentInput';
 export * from './manualPaymentInputPaymentMethod';
+export * from './manualPaymentUpdate';
+export * from './manualPaymentUpdatePaymentMethod';
 export * from './property';
 export * from './propertyInput';
 export * from './propertyUpdate';

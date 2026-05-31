@@ -15,6 +15,14 @@ const CreateManualPaymentBody = z.object({
   notes: z.string().nullable().optional(),
 });
 
+const UpdateManualPaymentBody = z.object({
+  clientId: z.number().int().positive().optional(),
+  amount: z.number().positive().optional(),
+  paymentDate: z.string().min(1).optional(),
+  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer"]).optional(),
+  notes: z.string().nullable().optional(),
+});
+
 router.get("/manual-payments", async (req, res) => {
   const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
@@ -35,7 +43,10 @@ router.get("/manual-payments", async (req, res) => {
       createdAt: manualPaymentsTable.createdAt,
     })
     .from(manualPaymentsTable)
-    .leftJoin(clientsTable, eq(manualPaymentsTable.clientId, clientsTable.id))
+    .leftJoin(
+      clientsTable,
+      and(eq(manualPaymentsTable.clientId, clientsTable.id), eq(clientsTable.tenantId, tenantId)),
+    )
     .where(and(...conditions))
     .orderBy(sql`${manualPaymentsTable.paymentDate} desc, ${manualPaymentsTable.createdAt} desc`);
 
@@ -49,12 +60,17 @@ router.post("/manual-payments", async (req, res) => {
   const parsed = CreateManualPaymentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
 
+  const [client] = await db
+    .select()
+    .from(clientsTable)
+    .where(and(eq(clientsTable.id, parsed.data.clientId), eq(clientsTable.tenantId, tenantId)))
+    .limit(1);
+  if (!client) { res.status(400).json({ error: "Invalid client" }); return; }
+
   const [row] = await db
     .insert(manualPaymentsTable)
     .values({ ...parsed.data, tenantId, amount: String(parsed.data.amount), notes: parsed.data.notes ?? null })
     .returning();
-
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId!)).limit(1);
 
   res.status(201).json({
     ...row,
@@ -62,6 +78,59 @@ router.post("/manual-payments", async (req, res) => {
     amount: Number(row.amount),
     createdAt: row.createdAt.toISOString(),
   });
+});
+
+router.patch("/manual-payments/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = UpdateManualPaymentBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
+
+  if (parsed.data.clientId !== undefined) {
+    const [client] = await db
+      .select({ id: clientsTable.id })
+      .from(clientsTable)
+      .where(and(eq(clientsTable.id, parsed.data.clientId), eq(clientsTable.tenantId, tenantId)))
+      .limit(1);
+    if (!client) { res.status(400).json({ error: "Invalid client" }); return; }
+  }
+
+  const updateData: Record<string, unknown> = { ...parsed.data };
+  if (updateData.amount !== undefined) updateData.amount = String(updateData.amount);
+
+  const [updated] = await db
+    .update(manualPaymentsTable)
+    .set(updateData)
+    .where(and(eq(manualPaymentsTable.id, id), eq(manualPaymentsTable.tenantId, tenantId)))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+
+  const [client] = updated.clientId != null
+    ? await db.select().from(clientsTable).where(and(eq(clientsTable.id, updated.clientId), eq(clientsTable.tenantId, tenantId))).limit(1)
+    : [];
+
+  res.json({
+    ...updated,
+    clientName: client?.name ?? null,
+    amount: Number(updated.amount),
+    createdAt: updated.createdAt.toISOString(),
+  });
+});
+
+router.delete("/manual-payments/:id", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  await db.delete(manualPaymentsTable)
+    .where(and(eq(manualPaymentsTable.id, id), eq(manualPaymentsTable.tenantId, tenantId)));
+  res.status(204).send();
 });
 
 export default router;

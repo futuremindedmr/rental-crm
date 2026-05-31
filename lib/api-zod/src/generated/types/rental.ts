@@ -15,9 +15,12 @@ export interface Rental {
   unitDescription?: string | null;
   startDate: string;
   termMonths: number;
+  /** @nullable */
+  endDate?: string | null;
   monthlyRate: number;
   monthsRemaining: number;
   isExpiringSoon: boolean;
+  isMonthToMonth: boolean;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

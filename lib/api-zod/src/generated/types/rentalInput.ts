@@ -12,6 +12,7 @@ export interface RentalInput {
   startDate: string;
   /** @minimum 1 */
   termMonths: number;
+  endDate?: string;
   /** @minimum 0 */
   monthlyRate: number;
   notes?: string;

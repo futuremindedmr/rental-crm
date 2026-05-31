@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useListSquarePayments, useListManualPayments, useCreateManualPayment, useListClients } from "@workspace/api-client-react";
+import { useListSquarePayments, useListManualPayments, useCreateManualPayment, useUpdateManualPayment, useDeleteManualPayment, useListClients } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 
 const METHOD_LABELS: Record<string, string> = {
   cash: "Cash",
@@ -21,7 +21,7 @@ const METHOD_LABELS: Record<string, string> = {
   bank_transfer: "Bank Transfer",
 };
 
-const logPaymentSchema = z.object({
+const paymentFormSchema = z.object({
   clientId: z.coerce.number().min(1, "Client is required"),
   amount: z.coerce.number().positive("Amount must be positive"),
   paymentDate: z.string().min(1, "Date is required"),
@@ -29,7 +29,17 @@ const logPaymentSchema = z.object({
   notes: z.string().optional(),
 });
 
-type LogPaymentForm = z.infer<typeof logPaymentSchema>;
+type PaymentForm = z.infer<typeof paymentFormSchema>;
+
+function emptyDefaults(): PaymentForm {
+  return {
+    clientId: 0,
+    amount: 0,
+    paymentDate: new Date().toISOString().split("T")[0],
+    paymentMethod: "cash",
+    notes: "",
+  };
+}
 
 function statusVariant(status: string): "default" | "secondary" | "outline" {
   const s = status.toLowerCase();
@@ -40,32 +50,72 @@ function statusVariant(status: string): "default" | "secondary" | "outline" {
 
 export default function Payments() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const { data: squarePayments, isLoading: squareLoading } = useListSquarePayments();
   const { data: manualPayments, isLoading: manualLoading } = useListManualPayments();
   const { data: clients } = useListClients({});
   const createManualPayment = useCreateManualPayment();
+  const updateManualPayment = useUpdateManualPayment();
+  const deleteManualPayment = useDeleteManualPayment();
 
-  const form = useForm<LogPaymentForm>({
-    resolver: zodResolver(logPaymentSchema),
-    defaultValues: {
-      paymentDate: new Date().toISOString().split("T")[0],
-      paymentMethod: "cash",
-      notes: "",
-    },
+  const form = useForm<PaymentForm>({
+    resolver: zodResolver(paymentFormSchema),
+    defaultValues: emptyDefaults(),
   });
 
-  const onSubmit = (data: LogPaymentForm) => {
-    createManualPayment.mutate(
-      { data: { ...data, notes: data.notes || null } },
+  const openCreate = () => {
+    setEditingId(null);
+    form.reset(emptyDefaults());
+    setDialogOpen(true);
+  };
+
+  const openEdit = (p: { id: number; clientId: number | null; amount: number; paymentDate: string; paymentMethod: string; notes: string | null }) => {
+    setEditingId(p.id);
+    form.reset({
+      clientId: p.clientId ?? 0,
+      amount: p.amount,
+      paymentDate: p.paymentDate ? p.paymentDate.split("T")[0] : new Date().toISOString().split("T")[0],
+      paymentMethod: (["cash", "check", "zelle", "venmo", "bank_transfer"].includes(p.paymentMethod)
+        ? p.paymentMethod
+        : "cash") as PaymentForm["paymentMethod"],
+      notes: p.notes ?? "",
+    });
+    setDialogOpen(true);
+  };
+
+  const onSubmit = (data: PaymentForm) => {
+    const body = { ...data, notes: data.notes || null };
+    if (editingId != null) {
+      updateManualPayment.mutate(
+        { id: editingId, data: body },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            setEditingId(null);
+          },
+        },
+      );
+    } else {
+      createManualPayment.mutate(
+        { data: body },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+          },
+        },
+      );
+    }
+  };
+
+  const onDelete = () => {
+    if (editingId == null) return;
+    deleteManualPayment.mutate(
+      { id: editingId },
       {
         onSuccess: () => {
           setDialogOpen(false);
-          form.reset({
-            paymentDate: new Date().toISOString().split("T")[0],
-            paymentMethod: "cash",
-            notes: "",
-          });
+          setEditingId(null);
         },
       },
     );
@@ -73,7 +123,7 @@ export default function Payments() {
 
   type Row =
     | { kind: "square"; id: number; clientName: string | null; date: string; label: string; amount: number; status: string }
-    | { kind: "manual"; id: number; clientName: string | null; date: string; label: string; amount: number; notes: string | null };
+    | { kind: "manual"; id: number; clientId: number | null; clientName: string | null; date: string; label: string; amount: number; method: string; notes: string | null };
 
   const allRows: Row[] = useMemo(() => {
     const sq: Row[] = (squarePayments ?? []).map((p) => ({
@@ -88,16 +138,19 @@ export default function Payments() {
     const mn: Row[] = (manualPayments ?? []).map((p) => ({
       kind: "manual",
       id: p.id,
+      clientId: p.clientId ?? null,
       clientName: p.clientName ?? null,
       date: p.paymentDate ?? "",
       label: METHOD_LABELS[p.paymentMethod] ?? p.paymentMethod,
       amount: p.amount,
+      method: p.paymentMethod,
       notes: p.notes ?? null,
     }));
     return [...sq, ...mn].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
   }, [squarePayments, manualPayments]);
 
   const isLoading = squareLoading || manualLoading;
+  const isSaving = createManualPayment.isPending || updateManualPayment.isPending;
 
   return (
     <div className="space-y-6">
@@ -107,16 +160,16 @@ export default function Payments() {
           <p className="text-muted-foreground mt-1">All payments — manual and Square.</p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingId(null); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={openCreate}>
               <PlusCircle className="h-4 w-4" />
               Log Manual Payment
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Log Manual Payment</DialogTitle>
+              <DialogTitle>{editingId != null ? "Edit Manual Payment" : "Log Manual Payment"}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -126,7 +179,7 @@ export default function Payments() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                      <Select onValueChange={field.onChange} value={field.value ? field.value.toString() : undefined}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a client" />
@@ -214,9 +267,23 @@ export default function Payments() {
                   )}
                 />
 
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={createManualPayment.isPending}>
-                    {createManualPayment.isPending ? "Saving..." : "Log Payment"}
+                <div className="flex justify-between items-center pt-2">
+                  {editingId != null ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive gap-2"
+                      onClick={onDelete}
+                      disabled={deleteManualPayment.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  ) : (
+                    <span />
+                  )}
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Saving..." : editingId != null ? "Save Changes" : "Log Payment"}
                   </Button>
                 </div>
               </form>
@@ -235,16 +302,17 @@ export default function Payments() {
               <TableHead>Source</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead className="text-right">Amount</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : allRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                   No payments yet. Log a manual payment or sync with Square.
                 </TableCell>
               </TableRow>
@@ -272,6 +340,19 @@ export default function Payments() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     ${row.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    {row.kind === "manual" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => openEdit({ id: row.id, clientId: row.clientId, amount: row.amount, paymentDate: row.date, paymentMethod: row.method, notes: row.notes })}
+                        title="Edit payment"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

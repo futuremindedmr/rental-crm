@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown } from "lucide-react";
+import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DndContext,
@@ -32,6 +32,7 @@ const METRICS_COLLAPSED_KEY = "dashboard-metrics-collapsed";
 type StatCardId =
   | "activeRentals"
   | "expiringSoon"
+  | "monthToMonth"
   | "openLeads"
   | "rentCollected"
   | "overduePayments"
@@ -42,6 +43,7 @@ type StatCardId =
 const DEFAULT_ORDER: StatCardId[] = [
   "activeRentals",
   "expiringSoon",
+  "monthToMonth",
   "openLeads",
   "rentCollected",
   "overduePayments",
@@ -165,6 +167,18 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-yellow-600">{statsLoading ? "-" : stats?.expiringSoon || 0}</div>
+        </CardContent>
+      </Card>
+    ),
+    monthToMonth: (
+      <Card className="border-blue-300/60 bg-blue-50/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pr-8">
+          <CardTitle className="text-sm font-medium text-blue-700">Month-to-Month</CardTitle>
+          <CalendarClock className="h-4 w-4 text-blue-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-blue-700">{statsLoading ? "-" : stats?.monthToMonth || 0}</div>
+          <p className="text-xs text-muted-foreground mt-1">Past their fixed term</p>
         </CardContent>
       </Card>
     ),

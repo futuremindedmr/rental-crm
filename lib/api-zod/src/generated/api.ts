@@ -341,9 +341,11 @@ export const ListRentalsResponseItem = zod.object({
   "unitDescription": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
+  "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
+  "isMonthToMonth": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -364,6 +366,7 @@ export const CreateRentalBody = zod.object({
   "unitDescription": zod.string().optional(),
   "startDate": zod.string(),
   "termMonths": zod.number().min(1),
+  "endDate": zod.string().optional(),
   "monthlyRate": zod.number().min(createRentalBodyMonthlyRateMin),
   "notes": zod.string().optional()
 })
@@ -383,9 +386,11 @@ export const GetRentalResponse = zod.object({
   "unitDescription": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
+  "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
+  "isMonthToMonth": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -408,6 +413,7 @@ export const UpdateRentalBody = zod.object({
   "unitDescription": zod.string().nullish(),
   "startDate": zod.string().optional(),
   "termMonths": zod.number().min(1).optional(),
+  "endDate": zod.string().nullish(),
   "monthlyRate": zod.number().min(updateRentalBodyMonthlyRateMin).optional(),
   "notes": zod.string().nullish()
 })
@@ -419,9 +425,11 @@ export const UpdateRentalResponse = zod.object({
   "unitDescription": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
+  "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
+  "isMonthToMonth": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -574,11 +582,47 @@ export const CreateManualPaymentBody = zod.object({
 
 
 /**
+ * @summary Update a manual payment
+ */
+export const UpdateManualPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateManualPaymentBody = zod.object({
+  "clientId": zod.number().optional(),
+  "amount": zod.number().optional(),
+  "paymentDate": zod.string().optional(),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer']).optional(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateManualPaymentResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullable(),
+  "clientName": zod.string().nullish(),
+  "amount": zod.number(),
+  "paymentDate": zod.string(),
+  "paymentMethod": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a manual payment
+ */
+export const DeleteManualPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Get dashboard stats
  */
 export const GetDashboardStatsResponse = zod.object({
   "activeRentals": zod.number(),
   "expiringSoon": zod.number(),
+  "monthToMonth": zod.number(),
   "openLeads": zod.number(),
   "rentCollectedThisMonth": zod.number(),
   "overduePayments": zod.number(),

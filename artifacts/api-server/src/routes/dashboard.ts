@@ -6,20 +6,31 @@ import { requireTenant } from "../lib/tenant";
 
 const router = Router();
 
-function computeMonthsRemaining(startDate: string, termMonths: number): number {
-  const start = new Date(startDate);
-  const now = new Date();
-  const monthsElapsed =
-    (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-  return Math.max(0, termMonths - monthsElapsed);
-}
-
-function computeDaysRemaining(startDate: string, termMonths: number): number {
+function effectiveEndDate(startDate: string, termMonths: number, endDate: string | null): Date {
+  if (endDate) return new Date(endDate);
   const start = new Date(startDate);
   const end = new Date(start);
   end.setMonth(end.getMonth() + termMonths);
+  return end;
+}
+
+function computeMonthsRemaining(startDate: string, termMonths: number, endDate: string | null): number {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
+  const now = new Date();
+  if (now >= end) return 0;
+  const months = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth());
+  return Math.max(0, months);
+}
+
+function computeDaysRemaining(startDate: string, termMonths: number, endDate: string | null): number {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
   const now = new Date();
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function computeIsMonthToMonth(startDate: string, termMonths: number, endDate: string | null): boolean {
+  const end = effectiveEndDate(startDate, termMonths, endDate);
+  return new Date() >= end;
 }
 
 router.get("/dashboard/stats", async (req, res) => {
@@ -57,19 +68,21 @@ router.get("/dashboard/stats", async (req, res) => {
       )),
     db.select({ count: sql<number>`count(*)::int` }).from(propertiesTable)
       .where(eq(propertiesTable.tenantId, tenantId)),
-    db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths }).from(rentalsTable)
+    db.select({ startDate: rentalsTable.startDate, termMonths: rentalsTable.termMonths, endDate: rentalsTable.endDate }).from(rentalsTable)
       .where(eq(rentalsTable.tenantId, tenantId)),
   ]);
 
-  const activeRentals = allRentals.filter(r => computeMonthsRemaining(r.startDate, r.termMonths) > 0);
+  const activeRentals = allRentals.filter(r => computeMonthsRemaining(r.startDate, r.termMonths, r.endDate) > 0);
   const expiringSoon = activeRentals.filter(r => {
-    const days = computeDaysRemaining(r.startDate, r.termMonths);
+    const days = computeDaysRemaining(r.startDate, r.termMonths, r.endDate);
     return days <= 60 && days > 0;
   });
+  const monthToMonth = allRentals.filter(r => computeIsMonthToMonth(r.startDate, r.termMonths, r.endDate));
 
   res.json({
     activeRentals: activeRentals.length,
     expiringSoon: expiringSoon.length,
+    monthToMonth: monthToMonth.length,
     openLeads: openLeadsRow?.count ?? 0,
     rentCollectedThisMonth: Number(thisMonthRow?.total ?? 0),
     overduePayments: overdueRow?.count ?? 0,

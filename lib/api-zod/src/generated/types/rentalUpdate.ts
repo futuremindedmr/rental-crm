@@ -12,6 +12,8 @@ export interface RentalUpdate {
   startDate?: string;
   /** @minimum 1 */
   termMonths?: number;
+  /** @nullable */
+  endDate?: string | null;
   /** @minimum 0 */
   monthlyRate?: number;
   /** @nullable */

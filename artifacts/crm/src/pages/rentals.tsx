@@ -21,6 +21,7 @@ const newRentalSchema = z.object({
   unitDescription: z.string().min(1, "Unit description is required"),
   startDate: z.string().min(1, "Start date is required"),
   termMonths: z.coerce.number().min(1, "Term is required"),
+  endDate: z.string().optional(),
   monthlyRate: z.coerce.number().min(0, "Rate must be positive")
 });
 
@@ -39,7 +40,7 @@ function PaymentStatusBadge({ status }: { status: string | null | undefined }) {
 }
 
 export default function Rentals() {
-  const [filter, setFilter] = useState<"all" | "expiring">("all");
+  const [filter, setFilter] = useState<"all" | "expiring" | "mtm">("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,7 +64,14 @@ export default function Rentals() {
   });
 
   const onSubmit = (data: z.infer<typeof newRentalSchema>) => {
-    createRentalMutation.mutate({ data: { ...data, startDate: new Date(data.startDate).toISOString() } }, {
+    const { endDate, ...rest } = data;
+    createRentalMutation.mutate({
+      data: {
+        ...rest,
+        startDate: new Date(data.startDate).toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+      },
+    }, {
       onSuccess: () => {
         setDialogOpen(false);
         form.reset();
@@ -73,9 +81,11 @@ export default function Rentals() {
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
-    if (paymentFilter === "all") return rentals;
-    return rentals.filter((r) => r.paymentStatus === paymentFilter);
-  }, [rentals, paymentFilter]);
+    let list = rentals;
+    if (filter === "mtm") list = list.filter((r) => r.isMonthToMonth);
+    if (paymentFilter !== "all") list = list.filter((r) => r.paymentStatus === paymentFilter);
+    return list;
+  }, [rentals, paymentFilter, filter]);
 
   return (
     <div className="space-y-6">
@@ -121,6 +131,16 @@ export default function Rentals() {
                     <FormItem><FormLabel>Monthly Rate ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
+                <FormField control={form.control} name="endDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Leave blank to use Start Date + Term. After this date the agreement continues month-to-month.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={createRentalMutation.isPending}>
                     {createRentalMutation.isPending ? "Saving..." : "Create Rental"}
@@ -133,10 +153,11 @@ export default function Rentals() {
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "expiring")}>
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "expiring" | "mtm")}>
           <TabsList>
             <TabsTrigger value="all">All Rentals</TabsTrigger>
             <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
+            <TabsTrigger value="mtm">Month-to-Month</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -195,7 +216,11 @@ export default function Rentals() {
                   </TableCell>
                   <TableCell>{rental.termMonths} mo</TableCell>
                   <TableCell>
-                    {rental.isExpiringSoon ? (
+                    {rental.isMonthToMonth ? (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                        Month-to-Month
+                      </Badge>
+                    ) : rental.isExpiringSoon ? (
                       <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
                         {rental.monthsRemaining} mo
                       </Badge>

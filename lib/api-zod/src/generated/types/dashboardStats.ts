@@ -9,6 +9,7 @@
 export interface DashboardStats {
   activeRentals: number;
   expiringSoon: number;
+  monthToMonth: number;
   openLeads: number;
   rentCollectedThisMonth: number;
   overduePayments: number;

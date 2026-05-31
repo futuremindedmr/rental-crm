@@ -189,9 +189,12 @@ export interface Rental {
   unitDescription?: string | null;
   startDate: string;
   termMonths: number;
+  /** @nullable */
+  endDate?: string | null;
   monthlyRate: number;
   monthsRemaining: number;
   isExpiringSoon: boolean;
+  isMonthToMonth: boolean;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
@@ -205,6 +208,7 @@ export interface RentalInput {
   startDate: string;
   /** @minimum 1 */
   termMonths: number;
+  endDate?: string;
   /** @minimum 0 */
   monthlyRate: number;
   notes?: string;
@@ -216,6 +220,8 @@ export interface RentalUpdate {
   startDate?: string;
   /** @minimum 1 */
   termMonths?: number;
+  /** @nullable */
+  endDate?: string | null;
   /** @minimum 0 */
   monthlyRate?: number;
   /** @nullable */
@@ -275,6 +281,26 @@ export interface ManualPaymentInput {
   notes?: string | null;
 }
 
+export type ManualPaymentUpdatePaymentMethod = typeof ManualPaymentUpdatePaymentMethod[keyof typeof ManualPaymentUpdatePaymentMethod];
+
+
+export const ManualPaymentUpdatePaymentMethod = {
+  cash: 'cash',
+  check: 'check',
+  zelle: 'zelle',
+  venmo: 'venmo',
+  bank_transfer: 'bank_transfer',
+} as const;
+
+export interface ManualPaymentUpdate {
+  clientId?: number;
+  amount?: number;
+  paymentDate?: string;
+  paymentMethod?: ManualPaymentUpdatePaymentMethod;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface SquarePayment {
   id: number;
   /** @nullable */
@@ -319,6 +345,7 @@ export interface SquareStatus {
 export interface DashboardStats {
   activeRentals: number;
   expiringSoon: number;
+  monthToMonth: number;
   openLeads: number;
   rentCollectedThisMonth: number;
   overduePayments: number;
