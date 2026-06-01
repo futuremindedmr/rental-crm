@@ -178,8 +178,8 @@ export default function Rentals() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Client</TableHead>
-              <TableHead>Unit Description</TableHead>
+              <TableHead>Machine</TableHead>
+              <TableHead>Renter</TableHead>
               <TableHead>Start Date</TableHead>
               <TableHead>Term</TableHead>
               <TableHead>Remaining</TableHead>
@@ -209,8 +209,19 @@ export default function Rentals() {
                   )}
                   onClick={() => setLocation(`/clients/${rental.clientId}`)}
                 >
-                  <TableCell className="font-medium">{rental.clientName}</TableCell>
-                  <TableCell>{rental.unitDescription}</TableCell>
+                  <TableCell>
+                    <div className="font-semibold">
+                      {rental.machineCode || rental.brand
+                        ? [rental.machineCode, rental.brand].filter(Boolean).join(" · ")
+                        : rental.unitDescription || <span className="text-muted-foreground">—</span>}
+                    </div>
+                    {rental.machineCode && rental.brand && rental.unitDescription && (
+                      <div className="text-xs text-muted-foreground">{rental.unitDescription}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">{rental.clientName || "—"}</span>
+                  </TableCell>
                   <TableCell>
                     {rental.startDate ? format(new Date(rental.startDate), 'MMM d, yyyy') : ''}
                   </TableCell>
