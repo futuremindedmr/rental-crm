@@ -15,6 +15,34 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListClients } from "@workspace/api-client-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+
+type SortCol = "machine" | "renter" | "startDate" | "term" | "monthlyRate";
+type SortDir = "asc" | "desc";
+
+function SortableHead({
+  label, col, current, dir, onClick, className,
+}: {
+  label: string; col: SortCol; current: SortCol; dir: SortDir;
+  onClick: (col: SortCol) => void; className?: string;
+}) {
+  const active = col === current;
+  return (
+    <TableHead
+      className={cn("cursor-pointer select-none whitespace-nowrap", className)}
+      onClick={() => onClick(col)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {active
+          ? dir === "asc"
+            ? <ChevronUp className="h-3.5 w-3.5 text-foreground" />
+            : <ChevronDown className="h-3.5 w-3.5 text-foreground" />
+          : <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />}
+      </span>
+    </TableHead>
+  );
+}
 
 const newRentalSchema = z.object({
   clientId: z.coerce.number().min(1, "Client is required"),
@@ -42,8 +70,19 @@ function PaymentStatusBadge({ status }: { status: string | null | undefined }) {
 export default function Rentals() {
   const [filter, setFilter] = useState<"all" | "expiring" | "mtm">("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [sortCol, setSortCol] = useState<SortCol>("machine");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleSort = (col: SortCol) => {
+    if (col === sortCol) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  };
 
   const { data: rentals, isLoading } = useListRentals({
     expiringSoon: filter === "expiring" ? true : undefined
@@ -84,8 +123,30 @@ export default function Rentals() {
     let list = rentals;
     if (filter === "mtm") list = list.filter((r) => r.isMonthToMonth);
     if (paymentFilter !== "all") list = list.filter((r) => r.paymentStatus === paymentFilter);
+
+    const mul = sortDir === "asc" ? 1 : -1;
+    list = [...list].sort((a, b) => {
+      switch (sortCol) {
+        case "machine": {
+          const aKey = (a.machineCode ?? a.unitDescription ?? "").toLowerCase();
+          const bKey = (b.machineCode ?? b.unitDescription ?? "").toLowerCase();
+          return mul * aKey.localeCompare(bKey, undefined, { numeric: true, sensitivity: "base" });
+        }
+        case "renter":
+          return mul * (a.clientName ?? "").localeCompare(b.clientName ?? "");
+        case "startDate":
+          return mul * (a.startDate ?? "").localeCompare(b.startDate ?? "");
+        case "term":
+          return mul * (a.termMonths - b.termMonths);
+        case "monthlyRate":
+          return mul * ((a.monthlyRate ?? 0) - (b.monthlyRate ?? 0));
+        default:
+          return 0;
+      }
+    });
+
     return list;
-  }, [rentals, paymentFilter, filter]);
+  }, [rentals, paymentFilter, filter, sortCol, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -178,12 +239,12 @@ export default function Rentals() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Machine</TableHead>
-              <TableHead>Renter</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Term</TableHead>
+              <SortableHead label="Machine" col="machine" current={sortCol} dir={sortDir} onClick={handleSort} />
+              <SortableHead label="Renter" col="renter" current={sortCol} dir={sortDir} onClick={handleSort} />
+              <SortableHead label="Start Date" col="startDate" current={sortCol} dir={sortDir} onClick={handleSort} />
+              <SortableHead label="Term" col="term" current={sortCol} dir={sortDir} onClick={handleSort} />
               <TableHead>Remaining</TableHead>
-              <TableHead className="text-right">Monthly Rent</TableHead>
+              <SortableHead label="Monthly Rent" col="monthlyRate" current={sortCol} dir={sortDir} onClick={handleSort} className="text-right" />
               <TableHead>Payment Status</TableHead>
               <TableHead>Notes</TableHead>
             </TableRow>
