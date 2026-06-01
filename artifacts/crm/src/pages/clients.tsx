@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { useListClients, useCreateClient, useListProperties, useImportClients } from "@workspace/api-client-react";
+import { useListClients, useCreateClient, useListProperties, useImportClients, getListClientsQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -92,6 +93,7 @@ export default function Clients() {
   const [importFileName, setImportFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useListClients({ 
     search: search || undefined, 
@@ -157,6 +159,7 @@ export default function Clients() {
           setImportRows([]);
           setImportFileName("");
           if (fileInputRef.current) fileInputRef.current.value = "";
+          queryClient.invalidateQueries({ queryKey: getListClientsQueryKey() });
           const parts = [`${result.clientsCreated} client${result.clientsCreated !== 1 ? "s" : ""} imported`];
           if (result.rentalsCreated > 0) parts.push(`${result.rentalsCreated} rental${result.rentalsCreated !== 1 ? "s" : ""} created`);
           if (result.skipped > 0) parts.push(`${result.skipped} skipped`);
@@ -264,6 +267,7 @@ export default function Clients() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>Status</TableHead>
                             <TableHead>Renter Name</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Email</TableHead>
@@ -277,22 +281,30 @@ export default function Clients() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {previewRows.map((row, i) => (
-                            <TableRow key={i} className={!row.renterName?.trim() ? "opacity-40" : ""}>
-                              <TableCell className="font-medium whitespace-nowrap">
-                                {row.renterName || <span className="text-muted-foreground italic">blank (skip)</span>}
-                              </TableCell>
-                              <TableCell>{row.stage || "—"}</TableCell>
-                              <TableCell className="text-sm">{row.email || "—"}</TableCell>
-                              <TableCell className="text-sm whitespace-nowrap">{row.phone || "—"}</TableCell>
-                              <TableCell className="text-sm">{row.machineCode || "—"}</TableCell>
-                              <TableCell className="text-sm">{row.brand || "—"}</TableCell>
-                              <TableCell className="text-sm">{row.revenue != null ? `$${row.revenue}` : "—"}</TableCell>
-                              <TableCell className="text-sm">{row.costOfMachine != null ? `$${row.costOfMachine}` : "—"}</TableCell>
-                              <TableCell className="text-sm">{row.paidOff != null ? (row.paidOff ? "Yes" : "No") : "—"}</TableCell>
-                              <TableCell className="text-sm">{row.termMonths != null ? `${row.termMonths} mo` : "—"}</TableCell>
-                            </TableRow>
-                          ))}
+                          {previewRows.map((row, i) => {
+                            const isValid = !!row.renterName?.trim();
+                            return (
+                              <TableRow key={i} className={!isValid ? "opacity-50" : ""}>
+                                <TableCell className="whitespace-nowrap">
+                                  {isValid
+                                    ? <Badge variant="secondary" className="bg-green-100 text-green-800">Valid</Badge>
+                                    : <Badge variant="secondary" className="bg-slate-200 text-slate-600">Skip</Badge>}
+                                </TableCell>
+                                <TableCell className="font-medium whitespace-nowrap">
+                                  {row.renterName || <span className="text-muted-foreground italic">no name</span>}
+                                </TableCell>
+                                <TableCell>{row.stage || "—"}</TableCell>
+                                <TableCell className="text-sm">{row.email || "—"}</TableCell>
+                                <TableCell className="text-sm whitespace-nowrap">{row.phone || "—"}</TableCell>
+                                <TableCell className="text-sm">{row.machineCode || "—"}</TableCell>
+                                <TableCell className="text-sm">{row.brand || "—"}</TableCell>
+                                <TableCell className="text-sm">{row.revenue != null ? `$${row.revenue}` : "—"}</TableCell>
+                                <TableCell className="text-sm">{row.costOfMachine != null ? `$${row.costOfMachine}` : "—"}</TableCell>
+                                <TableCell className="text-sm">{row.paidOff != null ? (row.paidOff ? "Yes" : "No") : "—"}</TableCell>
+                                <TableCell className="text-sm">{row.termMonths != null ? `${row.termMonths} mo` : "—"}</TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
