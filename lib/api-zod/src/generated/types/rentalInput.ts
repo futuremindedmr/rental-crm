@@ -5,6 +5,7 @@
  * Washer & Dryer Rental CRM API
  * OpenAPI spec version: 0.2.0
  */
+import type { RentalInputMachineStatus } from './rentalInputMachineStatus';
 
 export interface RentalInput {
   clientId: number;
@@ -19,5 +20,11 @@ export interface RentalInput {
   monthlyRate: number;
   costOfMachine?: number;
   paidOff?: boolean;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  conditionScore?: number;
+  machineStatus?: RentalInputMachineStatus;
   notes?: string;
 }

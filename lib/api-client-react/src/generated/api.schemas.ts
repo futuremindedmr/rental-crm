@@ -200,6 +200,14 @@ export interface Rental {
   costOfMachine?: number | null;
   /** @nullable */
   paidOff?: boolean | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  conditionScore?: number | null;
+  /** @nullable */
+  machineStatus?: string | null;
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;
@@ -209,6 +217,14 @@ export interface Rental {
   paymentStatus?: string | null;
   createdAt: string;
 }
+
+export type RentalInputMachineStatus = typeof RentalInputMachineStatus[keyof typeof RentalInputMachineStatus];
+
+
+export const RentalInputMachineStatus = {
+  installed: 'installed',
+  in_storage: 'in_storage',
+} as const;
 
 export interface RentalInput {
   clientId: number;
@@ -223,6 +239,12 @@ export interface RentalInput {
   monthlyRate: number;
   costOfMachine?: number;
   paidOff?: boolean;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  conditionScore?: number;
+  machineStatus?: RentalInputMachineStatus;
   notes?: string;
 }
 
@@ -244,6 +266,14 @@ export interface RentalUpdate {
   costOfMachine?: number | null;
   /** @nullable */
   paidOff?: boolean | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  conditionScore?: number | null;
+  /** @nullable */
+  machineStatus?: string | null;
   /** @nullable */
   notes?: string | null;
 }

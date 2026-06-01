@@ -24,6 +24,14 @@ export interface RentalUpdate {
   costOfMachine?: number | null;
   /** @nullable */
   paidOff?: boolean | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  conditionScore?: number | null;
+  /** @nullable */
+  machineStatus?: string | null;
   /** @nullable */
   notes?: string | null;
 }

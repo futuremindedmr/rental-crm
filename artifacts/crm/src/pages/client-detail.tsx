@@ -34,7 +34,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ArrowLeft, Edit, Trash2, Download, FileText, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Download, FileText, Upload, Plus, Star } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 
@@ -55,7 +55,9 @@ const rentalFormSchema = z.object({
   machineCode: z.string().optional().or(z.literal("")),
   brand: z.string().optional().or(z.literal("")),
   costOfMachine: z.string().optional().or(z.literal("")),
-  paidOff: z.boolean().optional()
+  paidOff: z.boolean().optional(),
+  conditionScore: z.number().min(1).max(5).nullable().optional(),
+  machineStatus: z.enum(["installed", "in_storage"]).optional()
 });
 
 export default function ClientDetail() {
@@ -107,7 +109,9 @@ export default function ClientDetail() {
       machineCode: "",
       brand: "",
       costOfMachine: "",
-      paidOff: false
+      paidOff: false,
+      conditionScore: null,
+      machineStatus: "installed"
     }
   });
 
@@ -122,7 +126,9 @@ export default function ClientDetail() {
       machineCode: "",
       brand: "",
       costOfMachine: "",
-      paidOff: false
+      paidOff: false,
+      conditionScore: null,
+      machineStatus: "installed"
     }
   });
 
@@ -162,7 +168,9 @@ export default function ClientDetail() {
         machineCode: data.machineCode || undefined,
         brand: data.brand || undefined,
         costOfMachine: !isNaN(costOfMachine as number) ? costOfMachine : undefined,
-        paidOff: data.paidOff
+        paidOff: data.paidOff,
+        conditionScore: data.conditionScore ?? undefined,
+        machineStatus: data.machineStatus
       } 
     }, {
       onSuccess: () => {
@@ -187,7 +195,9 @@ export default function ClientDetail() {
         machineCode: data.machineCode || null,
         brand: data.brand || null,
         costOfMachine: data.costOfMachine && !isNaN(costOfMachine as number) ? (costOfMachine as number) : null,
-        paidOff: data.paidOff ?? null
+        paidOff: data.paidOff ?? null,
+        conditionScore: data.conditionScore ?? null,
+        machineStatus: data.machineStatus ?? null
       }
     }, {
       onSuccess: () => {
@@ -209,7 +219,9 @@ export default function ClientDetail() {
       machineCode: rental.machineCode ?? "",
       brand: rental.brand ?? "",
       costOfMachine: rental.costOfMachine != null ? String(rental.costOfMachine) : "",
-      paidOff: rental.paidOff ?? false
+      paidOff: rental.paidOff ?? false,
+      conditionScore: (rental as any).conditionScore ?? null,
+      machineStatus: ((rental as any).machineStatus as "installed" | "in_storage") ?? "installed"
     });
     setEditRentalDialogOpen(true);
   };
@@ -364,6 +376,36 @@ export default function ClientDetail() {
                             </FormItem>
                           )} />
                         </div>
+                        <FormField control={rentalForm.control} name="conditionScore" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Condition</FormLabel>
+                            <FormControl>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                  <button key={n} type="button" onClick={() => field.onChange(field.value === n ? null : n)}>
+                                    <Star className={`h-6 w-6 transition-colors ${n <= (field.value ?? 0) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/30"}`} />
+                                  </button>
+                                ))}
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={rentalForm.control} name="machineStatus" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="installed">Installed</SelectItem>
+                                <SelectItem value="in_storage">In Storage</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                       </div>
                       <div className="flex justify-end pt-4">
                         <Button type="submit" disabled={createRentalMutation.isPending}>Add Rental</Button>
@@ -675,6 +717,36 @@ export default function ClientDetail() {
                     </FormItem>
                   )} />
                 </div>
+                <FormField control={editRentalForm.control} name="conditionScore" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Condition</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <button key={n} type="button" onClick={() => field.onChange(field.value === n ? null : n)}>
+                            <Star className={`h-6 w-6 transition-colors ${n <= (field.value ?? 0) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/30"}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editRentalForm.control} name="machineStatus" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="installed">Installed</SelectItem>
+                        <SelectItem value="in_storage">In Storage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={updateRentalMutation.isPending}>Save Changes</Button>

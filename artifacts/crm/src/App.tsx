@@ -13,6 +13,7 @@ import ClientDetail from "@/pages/client-detail";
 import Properties from "@/pages/properties";
 import Leads from "@/pages/leads";
 import Rentals from "@/pages/rentals";
+import Inventory from "@/pages/inventory";
 import Payments from "@/pages/payments";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
@@ -57,6 +58,7 @@ function MainApp() {
         <Route path="/properties" component={Properties} />
         <Route path="/leads" component={Leads} />
         <Route path="/rentals" component={Rentals} />
+        <Route path="/inventory" component={Inventory} />
         <Route path="/payments" component={Payments} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />

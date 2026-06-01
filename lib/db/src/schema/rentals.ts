@@ -15,6 +15,8 @@ export const rentalsTable = pgTable("rentals", {
   monthlyRate: numeric("monthly_rate", { precision: 10, scale: 2 }).notNull().default("0"),
   costOfMachine: numeric("cost_of_machine", { precision: 10, scale: 2 }),
   paidOff: boolean("paid_off").default(false),
+  conditionScore: integer("condition_score"),
+  machineStatus: text("machine_status").default("installed"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

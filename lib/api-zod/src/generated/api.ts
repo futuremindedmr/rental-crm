@@ -365,6 +365,10 @@ export const ListRentalsQueryParams = zod.object({
   "expiringSoon": zod.coerce.boolean().nullish()
 })
 
+export const listRentalsResponseConditionScoreMax = 5;
+
+
+
 export const ListRentalsResponseItem = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
@@ -378,6 +382,8 @@ export const ListRentalsResponseItem = zod.object({
   "monthlyRate": zod.number(),
   "costOfMachine": zod.number().nullish(),
   "paidOff": zod.boolean().nullish(),
+  "conditionScore": zod.number().min(1).max(listRentalsResponseConditionScoreMax).nullish(),
+  "machineStatus": zod.string().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
@@ -394,6 +400,8 @@ export const ListRentalsResponse = zod.array(ListRentalsResponseItem)
 
 export const createRentalBodyMonthlyRateMin = 0;
 
+export const createRentalBodyConditionScoreMax = 5;
+
 
 
 export const CreateRentalBody = zod.object({
@@ -407,6 +415,8 @@ export const CreateRentalBody = zod.object({
   "monthlyRate": zod.number().min(createRentalBodyMonthlyRateMin),
   "costOfMachine": zod.number().optional(),
   "paidOff": zod.boolean().optional(),
+  "conditionScore": zod.number().min(1).max(createRentalBodyConditionScoreMax).optional(),
+  "machineStatus": zod.enum(['installed', 'in_storage']).optional(),
   "notes": zod.string().optional()
 })
 
@@ -417,6 +427,10 @@ export const CreateRentalBody = zod.object({
 export const GetRentalParams = zod.object({
   "id": zod.coerce.number()
 })
+
+export const getRentalResponseConditionScoreMax = 5;
+
+
 
 export const GetRentalResponse = zod.object({
   "id": zod.number(),
@@ -431,6 +445,8 @@ export const GetRentalResponse = zod.object({
   "monthlyRate": zod.number(),
   "costOfMachine": zod.number().nullish(),
   "paidOff": zod.boolean().nullish(),
+  "conditionScore": zod.number().min(1).max(getRentalResponseConditionScoreMax).nullish(),
+  "machineStatus": zod.string().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
@@ -450,6 +466,8 @@ export const UpdateRentalParams = zod.object({
 
 export const updateRentalBodyMonthlyRateMin = 0;
 
+export const updateRentalBodyConditionScoreMax = 5;
+
 
 
 export const UpdateRentalBody = zod.object({
@@ -462,8 +480,14 @@ export const UpdateRentalBody = zod.object({
   "monthlyRate": zod.number().min(updateRentalBodyMonthlyRateMin).optional(),
   "costOfMachine": zod.number().nullish(),
   "paidOff": zod.boolean().nullish(),
+  "conditionScore": zod.number().min(1).max(updateRentalBodyConditionScoreMax).nullish(),
+  "machineStatus": zod.string().nullish(),
   "notes": zod.string().nullish()
 })
+
+export const updateRentalResponseConditionScoreMax = 5;
+
+
 
 export const UpdateRentalResponse = zod.object({
   "id": zod.number(),
@@ -478,6 +502,8 @@ export const UpdateRentalResponse = zod.object({
   "monthlyRate": zod.number(),
   "costOfMachine": zod.number().nullish(),
   "paidOff": zod.boolean().nullish(),
+  "conditionScore": zod.number().min(1).max(updateRentalResponseConditionScoreMax).nullish(),
+  "machineStatus": zod.string().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),

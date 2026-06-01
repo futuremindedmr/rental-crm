@@ -26,6 +26,14 @@ export interface Rental {
   costOfMachine?: number | null;
   /** @nullable */
   paidOff?: boolean | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  conditionScore?: number | null;
+  /** @nullable */
+  machineStatus?: string | null;
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;

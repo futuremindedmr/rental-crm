@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  WashingMachine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Properties", href: "/properties", icon: Building2 },
   { name: "Leads", href: "/leads", icon: Inbox },
   { name: "Rentals", href: "/rentals", icon: FileText },
+  { name: "Inventory", href: "/inventory", icon: WashingMachine },
   { name: "Payments", href: "/payments", icon: CreditCard },
 ];
 

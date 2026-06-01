@@ -44,6 +44,7 @@ export * from './propertyUpdate';
 export * from './rental';
 export * from './rentalAgreement';
 export * from './rentalInput';
+export * from './rentalInputMachineStatus';
 export * from './rentalUpdate';
 export * from './squareInvoice';
 export * from './squarePayment';

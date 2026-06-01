@@ -57,6 +57,8 @@ function formatRental(
     monthlyRate: string;
     costOfMachine: string | null;
     paidOff: boolean | null;
+    conditionScore: number | null;
+    machineStatus: string | null;
     notes: string | null;
     createdAt: Date;
   },
@@ -150,6 +152,8 @@ router.get("/rentals", async (req, res) => {
       monthlyRate: rentalsTable.monthlyRate,
       costOfMachine: rentalsTable.costOfMachine,
       paidOff: rentalsTable.paidOff,
+      conditionScore: rentalsTable.conditionScore,
+      machineStatus: rentalsTable.machineStatus,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,
     })
@@ -209,6 +213,8 @@ router.get("/rentals/:id", async (req, res) => {
       monthlyRate: rentalsTable.monthlyRate,
       costOfMachine: rentalsTable.costOfMachine,
       paidOff: rentalsTable.paidOff,
+      conditionScore: rentalsTable.conditionScore,
+      machineStatus: rentalsTable.machineStatus,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,
     })
