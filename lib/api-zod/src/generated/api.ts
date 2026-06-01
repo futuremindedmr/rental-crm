@@ -115,6 +115,36 @@ export const CreateClientBody = zod.object({
 
 
 /**
+ * @summary Bulk import clients and rentals from CSV data
+ */
+
+
+
+export const ImportClientsBody = zod.object({
+  "rows": zod.array(zod.object({
+  "renterName": zod.string().min(1),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "stage": zod.string().optional().describe('Installed → active_renter, In Storage → lead'),
+  "machineCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "revenue": zod.number().optional(),
+  "costOfMachine": zod.number().optional(),
+  "paidOff": zod.boolean().optional(),
+  "termMonths": zod.number().optional()
+}))
+})
+
+export const ImportClientsResponse = zod.object({
+  "clientsCreated": zod.number(),
+  "rentalsCreated": zod.number(),
+  "skipped": zod.number(),
+  "errors": zod.array(zod.string())
+})
+
+
+/**
  * @summary Get a client
  */
 export const GetClientParams = zod.object({
@@ -339,10 +369,14 @@ export const ListRentalsResponseItem = zod.object({
   "clientId": zod.number(),
   "clientName": zod.string().nullish(),
   "unitDescription": zod.string().nullish(),
+  "machineCode": zod.string().nullish(),
+  "brand": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
   "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
+  "costOfMachine": zod.number().nullish(),
+  "paidOff": zod.boolean().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
@@ -364,10 +398,14 @@ export const createRentalBodyMonthlyRateMin = 0;
 export const CreateRentalBody = zod.object({
   "clientId": zod.number(),
   "unitDescription": zod.string().optional(),
+  "machineCode": zod.string().optional(),
+  "brand": zod.string().optional(),
   "startDate": zod.string(),
   "termMonths": zod.number().min(1),
   "endDate": zod.string().optional(),
   "monthlyRate": zod.number().min(createRentalBodyMonthlyRateMin),
+  "costOfMachine": zod.number().optional(),
+  "paidOff": zod.boolean().optional(),
   "notes": zod.string().optional()
 })
 
@@ -384,10 +422,14 @@ export const GetRentalResponse = zod.object({
   "clientId": zod.number(),
   "clientName": zod.string().nullish(),
   "unitDescription": zod.string().nullish(),
+  "machineCode": zod.string().nullish(),
+  "brand": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
   "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
+  "costOfMachine": zod.number().nullish(),
+  "paidOff": zod.boolean().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
@@ -411,10 +453,14 @@ export const updateRentalBodyMonthlyRateMin = 0;
 
 export const UpdateRentalBody = zod.object({
   "unitDescription": zod.string().nullish(),
+  "machineCode": zod.string().nullish(),
+  "brand": zod.string().nullish(),
   "startDate": zod.string().optional(),
   "termMonths": zod.number().min(1).optional(),
   "endDate": zod.string().nullish(),
   "monthlyRate": zod.number().min(updateRentalBodyMonthlyRateMin).optional(),
+  "costOfMachine": zod.number().nullish(),
+  "paidOff": zod.boolean().nullish(),
   "notes": zod.string().nullish()
 })
 
@@ -423,10 +469,14 @@ export const UpdateRentalResponse = zod.object({
   "clientId": zod.number(),
   "clientName": zod.string().nullish(),
   "unitDescription": zod.string().nullish(),
+  "machineCode": zod.string().nullish(),
+  "brand": zod.string().nullish(),
   "startDate": zod.string(),
   "termMonths": zod.number(),
   "endDate": zod.string().nullish(),
   "monthlyRate": zod.number(),
+  "costOfMachine": zod.number().nullish(),
+  "paidOff": zod.boolean().nullish(),
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),

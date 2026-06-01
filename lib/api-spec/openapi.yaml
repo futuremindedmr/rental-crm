@@ -159,6 +159,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Client"
 
+  /clients/import:
+    post:
+      operationId: importClients
+      tags: [clients]
+      summary: Bulk import clients and rentals from CSV data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientImportInput"
+      responses:
+        "200":
+          description: Import result summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientImportResult"
+
   /clients/{id}:
     get:
       operationId: getClient
@@ -985,6 +1004,10 @@ components:
           type: ["string", "null"]
         unitDescription:
           type: ["string", "null"]
+        machineCode:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
         startDate:
           type: string
         termMonths:
@@ -993,6 +1016,10 @@ components:
           type: ["string", "null"]
         monthlyRate:
           type: number
+        costOfMachine:
+          type: ["number", "null"]
+        paidOff:
+          type: ["boolean", "null"]
         monthsRemaining:
           type: integer
         isExpiringSoon:
@@ -1014,6 +1041,10 @@ components:
           type: integer
         unitDescription:
           type: string
+        machineCode:
+          type: string
+        brand:
+          type: string
         startDate:
           type: string
         termMonths:
@@ -1024,6 +1055,10 @@ components:
         monthlyRate:
           type: number
           minimum: 0
+        costOfMachine:
+          type: number
+        paidOff:
+          type: boolean
         notes:
           type: string
 
@@ -1032,6 +1067,10 @@ components:
       properties:
         unitDescription:
           type: ["string", "null"]
+        machineCode:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
         startDate:
           type: string
         termMonths:
@@ -1042,8 +1081,66 @@ components:
         monthlyRate:
           type: number
           minimum: 0
+        costOfMachine:
+          type: ["number", "null"]
+        paidOff:
+          type: ["boolean", "null"]
         notes:
           type: ["string", "null"]
+
+    # ── CSV Import ───────────────────────────────────────────────────────────
+    ClientImportRow:
+      type: object
+      required: [renterName]
+      properties:
+        renterName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+        stage:
+          type: string
+          description: "Installed → active_renter, In Storage → lead"
+        machineCode:
+          type: string
+        brand:
+          type: string
+        revenue:
+          type: number
+        costOfMachine:
+          type: number
+        paidOff:
+          type: boolean
+        termMonths:
+          type: integer
+
+    ClientImportInput:
+      type: object
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientImportRow"
+
+    ClientImportResult:
+      type: object
+      required: [clientsCreated, rentalsCreated, skipped, errors]
+      properties:
+        clientsCreated:
+          type: integer
+        rentalsCreated:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
 
     # ── Rental Agreement ─────────────────────────────────────────────────────
     RentalAgreement:

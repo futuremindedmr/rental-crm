@@ -9,11 +9,15 @@
 export interface RentalInput {
   clientId: number;
   unitDescription?: string;
+  machineCode?: string;
+  brand?: string;
   startDate: string;
   /** @minimum 1 */
   termMonths: number;
   endDate?: string;
   /** @minimum 0 */
   monthlyRate: number;
+  costOfMachine?: number;
+  paidOff?: boolean;
   notes?: string;
 }

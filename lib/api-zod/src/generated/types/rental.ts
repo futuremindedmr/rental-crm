@@ -13,11 +13,19 @@ export interface Rental {
   clientName?: string | null;
   /** @nullable */
   unitDescription?: string | null;
+  /** @nullable */
+  machineCode?: string | null;
+  /** @nullable */
+  brand?: string | null;
   startDate: string;
   termMonths: number;
   /** @nullable */
   endDate?: string | null;
   monthlyRate: number;
+  /** @nullable */
+  costOfMachine?: number | null;
+  /** @nullable */
+  paidOff?: boolean | null;
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;

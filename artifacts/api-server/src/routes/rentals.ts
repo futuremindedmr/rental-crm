@@ -47,10 +47,14 @@ function formatRental(
     clientId: number;
     clientName: string | null;
     unitDescription: string | null;
+    machineCode: string | null;
+    brand: string | null;
     startDate: string;
     termMonths: number;
     endDate: string | null;
     monthlyRate: string;
+    costOfMachine: string | null;
+    paidOff: boolean | null;
     notes: string | null;
     createdAt: Date;
   },
@@ -61,6 +65,7 @@ function formatRental(
   return {
     ...row,
     monthlyRate: Number(row.monthlyRate),
+    costOfMachine: row.costOfMachine != null ? Number(row.costOfMachine) : null,
     monthsRemaining,
     isExpiringSoon: daysRemaining <= 60 && daysRemaining > 0,
     isMonthToMonth: computeIsMonthToMonth(row.startDate, row.termMonths, row.endDate),
@@ -136,10 +141,14 @@ router.get("/rentals", async (req, res) => {
       clientId: rentalsTable.clientId,
       clientName: clientsTable.name,
       unitDescription: rentalsTable.unitDescription,
+      machineCode: rentalsTable.machineCode,
+      brand: rentalsTable.brand,
       startDate: rentalsTable.startDate,
       termMonths: rentalsTable.termMonths,
       endDate: rentalsTable.endDate,
       monthlyRate: rentalsTable.monthlyRate,
+      costOfMachine: rentalsTable.costOfMachine,
+      paidOff: rentalsTable.paidOff,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,
     })
@@ -170,6 +179,7 @@ router.post("/rentals", async (req, res) => {
     ...parsed.data,
     tenantId,
     monthlyRate: String(parsed.data.monthlyRate),
+    costOfMachine: parsed.data.costOfMachine != null ? String(parsed.data.costOfMachine) : undefined,
   }).returning();
 
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, rental.clientId)).limit(1);
@@ -190,10 +200,14 @@ router.get("/rentals/:id", async (req, res) => {
       clientId: rentalsTable.clientId,
       clientName: clientsTable.name,
       unitDescription: rentalsTable.unitDescription,
+      machineCode: rentalsTable.machineCode,
+      brand: rentalsTable.brand,
       startDate: rentalsTable.startDate,
       termMonths: rentalsTable.termMonths,
       endDate: rentalsTable.endDate,
       monthlyRate: rentalsTable.monthlyRate,
+      costOfMachine: rentalsTable.costOfMachine,
+      paidOff: rentalsTable.paidOff,
       notes: rentalsTable.notes,
       createdAt: rentalsTable.createdAt,
     })
@@ -219,6 +233,7 @@ router.patch("/rentals/:id", async (req, res) => {
 
   const updateData: Record<string, unknown> = { ...bodyParsed.data };
   if (updateData.monthlyRate !== undefined) updateData.monthlyRate = String(updateData.monthlyRate);
+  if (updateData.costOfMachine !== undefined) updateData.costOfMachine = updateData.costOfMachine != null ? String(updateData.costOfMachine) : null;
 
   const [updated] = await db
     .update(rentalsTable)

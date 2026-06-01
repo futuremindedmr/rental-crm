@@ -187,11 +187,19 @@ export interface Rental {
   clientName?: string | null;
   /** @nullable */
   unitDescription?: string | null;
+  /** @nullable */
+  machineCode?: string | null;
+  /** @nullable */
+  brand?: string | null;
   startDate: string;
   termMonths: number;
   /** @nullable */
   endDate?: string | null;
   monthlyRate: number;
+  /** @nullable */
+  costOfMachine?: number | null;
+  /** @nullable */
+  paidOff?: boolean | null;
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;
@@ -205,18 +213,26 @@ export interface Rental {
 export interface RentalInput {
   clientId: number;
   unitDescription?: string;
+  machineCode?: string;
+  brand?: string;
   startDate: string;
   /** @minimum 1 */
   termMonths: number;
   endDate?: string;
   /** @minimum 0 */
   monthlyRate: number;
+  costOfMachine?: number;
+  paidOff?: boolean;
   notes?: string;
 }
 
 export interface RentalUpdate {
   /** @nullable */
   unitDescription?: string | null;
+  /** @nullable */
+  machineCode?: string | null;
+  /** @nullable */
+  brand?: string | null;
   startDate?: string;
   /** @minimum 1 */
   termMonths?: number;
@@ -225,7 +241,38 @@ export interface RentalUpdate {
   /** @minimum 0 */
   monthlyRate?: number;
   /** @nullable */
+  costOfMachine?: number | null;
+  /** @nullable */
+  paidOff?: boolean | null;
+  /** @nullable */
   notes?: string | null;
+}
+
+export interface ClientImportRow {
+  /** @minLength 1 */
+  renterName: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  /** Installed → active_renter, In Storage → lead */
+  stage?: string;
+  machineCode?: string;
+  brand?: string;
+  revenue?: number;
+  costOfMachine?: number;
+  paidOff?: boolean;
+  termMonths?: number;
+}
+
+export interface ClientImportInput {
+  rows: ClientImportRow[];
+}
+
+export interface ClientImportResult {
+  clientsCreated: number;
+  rentalsCreated: number;
+  skipped: number;
+  errors: string[];
 }
 
 export interface RentalAgreement {

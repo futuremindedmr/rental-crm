@@ -163,5 +163,69 @@ router.delete("/clients/:id", async (req, res) => {
   res.status(204).send();
 });
 
+router.post("/clients/import", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
+  const body = req.body as { rows?: unknown[] };
+  if (!Array.isArray(body?.rows)) { res.status(400).json({ error: "rows must be an array" }); return; }
+
+  let clientsCreated = 0;
+  let rentalsCreated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < body.rows.length; i++) {
+    const row = body.rows[i] as Record<string, unknown>;
+    const rowNum = i + 1;
+    const name = (typeof row.renterName === "string" ? row.renterName : "").trim();
+    if (!name) { skipped++; continue; }
+
+    try {
+      const stageRaw = typeof row.stage === "string" ? row.stage.trim().toLowerCase() : "";
+      const status = stageRaw === "installed" ? "active_renter" : "lead";
+
+      const [client] = await db.insert(clientsTable).values({
+        tenantId,
+        name,
+        email: typeof row.email === "string" && row.email ? row.email : null,
+        phone: typeof row.phone === "string" && row.phone ? row.phone : null,
+        notes: typeof row.notes === "string" && row.notes ? row.notes : null,
+        status,
+      }).returning();
+      clientsCreated++;
+
+      const revenue = typeof row.revenue === "number" ? row.revenue : null;
+      const costOfMachine = typeof row.costOfMachine === "number" ? row.costOfMachine : null;
+      const termMonths = typeof row.termMonths === "number" && row.termMonths > 0 ? row.termMonths : null;
+      const machineCode = typeof row.machineCode === "string" && row.machineCode ? row.machineCode : null;
+      const brand = typeof row.brand === "string" && row.brand ? row.brand : null;
+      const paidOff = typeof row.paidOff === "boolean" ? row.paidOff : false;
+
+      const hasRentalData = machineCode || brand || revenue != null || costOfMachine != null || termMonths != null;
+      if (hasRentalData) {
+        const today = new Date().toISOString().split("T")[0];
+        await db.insert(rentalsTable).values({
+          tenantId,
+          clientId: client.id,
+          machineCode,
+          brand,
+          monthlyRate: String(revenue ?? 0),
+          costOfMachine: costOfMachine != null ? String(costOfMachine) : null,
+          paidOff,
+          termMonths: termMonths ?? 12,
+          startDate: today,
+        });
+        rentalsCreated++;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`Row ${rowNum} (${name}): ${msg}`);
+    }
+  }
+
+  res.json({ clientsCreated, rentalsCreated, skipped, errors });
+});
+
 export { computeMonthsRemaining };
 export default router;

@@ -9,6 +9,10 @@
 export interface RentalUpdate {
   /** @nullable */
   unitDescription?: string | null;
+  /** @nullable */
+  machineCode?: string | null;
+  /** @nullable */
+  brand?: string | null;
   startDate?: string;
   /** @minimum 1 */
   termMonths?: number;
@@ -16,6 +20,10 @@ export interface RentalUpdate {
   endDate?: string | null;
   /** @minimum 0 */
   monthlyRate?: number;
+  /** @nullable */
+  costOfMachine?: number | null;
+  /** @nullable */
+  paidOff?: boolean | null;
   /** @nullable */
   notes?: string | null;
 }
