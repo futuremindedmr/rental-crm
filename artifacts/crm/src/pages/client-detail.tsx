@@ -49,6 +49,7 @@ const editClientSchema = z.object({
 const rentalFormSchema = z.object({
   unitDescription: z.string().min(1, "Unit description is required"),
   startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional().or(z.literal("")),
   termMonths: z.coerce.number().min(1, "Term is required"),
   monthlyRate: z.coerce.number().min(0, "Rate must be positive"),
   machineCode: z.string().optional().or(z.literal("")),
@@ -100,6 +101,7 @@ export default function ClientDetail() {
     defaultValues: {
       unitDescription: "",
       startDate: new Date().toISOString().split('T')[0],
+      endDate: "",
       termMonths: 12,
       monthlyRate: 0,
       machineCode: "",
@@ -114,6 +116,7 @@ export default function ClientDetail() {
     defaultValues: {
       unitDescription: "",
       startDate: new Date().toISOString().split('T')[0],
+      endDate: "",
       termMonths: 12,
       monthlyRate: 0,
       machineCode: "",
@@ -155,6 +158,7 @@ export default function ClientDetail() {
         ...data,
         clientId,
         startDate: new Date(data.startDate).toISOString(),
+        endDate: data.endDate ? data.endDate + "-01" : undefined,
         machineCode: data.machineCode || undefined,
         brand: data.brand || undefined,
         costOfMachine: !isNaN(costOfMachine as number) ? costOfMachine : undefined,
@@ -177,6 +181,7 @@ export default function ClientDetail() {
       data: {
         unitDescription: data.unitDescription,
         startDate: new Date(data.startDate).toISOString(),
+        endDate: data.endDate ? data.endDate + "-01" : null,
         termMonths: data.termMonths,
         monthlyRate: data.monthlyRate,
         machineCode: data.machineCode || null,
@@ -198,6 +203,7 @@ export default function ClientDetail() {
     editRentalForm.reset({
       unitDescription: rental.unitDescription ?? "",
       startDate: rental.startDate ? new Date(rental.startDate).toISOString().split('T')[0] : "",
+      endDate: rental.endDate ? rental.endDate.substring(0, 7) : "",
       termMonths: rental.termMonths,
       monthlyRate: rental.monthlyRate ?? 0,
       machineCode: rental.machineCode ?? "",
@@ -320,6 +326,14 @@ export default function ClientDetail() {
                       )} />
                       <FormField control={rentalForm.control} name="startDate" render={({ field }) => (
                         <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                      <FormField control={rentalForm.control} name="endDate" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                          <FormControl><Input type="month" {...field} /></FormControl>
+                          <p className="text-xs text-muted-foreground">Appears in Expiring Soon when within 60 days.</p>
+                          <FormMessage />
+                        </FormItem>
                       )} />
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={rentalForm.control} name="termMonths" render={({ field }) => (
@@ -623,6 +637,14 @@ export default function ClientDetail() {
               )} />
               <FormField control={editRentalForm.control} name="startDate" render={({ field }) => (
                 <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={editRentalForm.control} name="endDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                  <FormControl><Input type="month" {...field} /></FormControl>
+                  <p className="text-xs text-muted-foreground">Appears in Expiring Soon when within 60 days.</p>
+                  <FormMessage />
+                </FormItem>
               )} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={editRentalForm.control} name="termMonths" render={({ field }) => (

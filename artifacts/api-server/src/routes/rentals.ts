@@ -30,15 +30,17 @@ function computeMonthsRemaining(startDate: string, termMonths: number, endDate: 
   return Math.max(0, months);
 }
 
-function computeDaysRemaining(startDate: string, termMonths: number, endDate: string | null): number {
-  const end = effectiveEndDate(startDate, termMonths, endDate);
-  const now = new Date();
-  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-}
-
 function computeIsMonthToMonth(startDate: string, termMonths: number, endDate: string | null): boolean {
   const end = effectiveEndDate(startDate, termMonths, endDate);
   return new Date() >= end;
+}
+
+function computeIsExpiringSoon(endDate: string | null): boolean {
+  if (!endDate) return false;
+  const end = new Date(endDate);
+  const now = new Date();
+  const daysRemaining = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return daysRemaining <= 60 && daysRemaining > 0;
 }
 
 function formatRental(
@@ -61,13 +63,12 @@ function formatRental(
   paymentStatus: string | null = null,
 ) {
   const monthsRemaining = computeMonthsRemaining(row.startDate, row.termMonths, row.endDate);
-  const daysRemaining = computeDaysRemaining(row.startDate, row.termMonths, row.endDate);
   return {
     ...row,
     monthlyRate: Number(row.monthlyRate),
     costOfMachine: row.costOfMachine != null ? Number(row.costOfMachine) : null,
     monthsRemaining,
-    isExpiringSoon: daysRemaining <= 60 && daysRemaining > 0,
+    isExpiringSoon: computeIsExpiringSoon(row.endDate),
     isMonthToMonth: computeIsMonthToMonth(row.startDate, row.termMonths, row.endDate),
     createdAt: row.createdAt.toISOString(),
     paymentStatus,

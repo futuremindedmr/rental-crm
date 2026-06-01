@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
-type SortCol = "machine" | "renter" | "startDate" | "term" | "monthlyRate";
+type SortCol = "machine" | "renter" | "startDate" | "endDate" | "term" | "monthlyRate";
 type SortDir = "asc" | "desc";
 
 function SortableHead({
@@ -52,6 +52,14 @@ const newRentalSchema = z.object({
   endDate: z.string().optional(),
   monthlyRate: z.coerce.number().min(0, "Rate must be positive")
 });
+
+function formatEndDate(endDate: string | null | undefined): string {
+  if (!endDate) return "—";
+  const match = endDate.match(/^(\d{4})-(\d{2})/);
+  if (!match) return "—";
+  const d = new Date(parseInt(match[1]), parseInt(match[2]) - 1, 1);
+  return format(d, "MMM yyyy");
+}
 
 function PaymentStatusBadge({ status }: { status: string | null | undefined }) {
   if (!status) return <span className="text-muted-foreground text-xs">—</span>;
@@ -108,7 +116,7 @@ export default function Rentals() {
       data: {
         ...rest,
         startDate: new Date(data.startDate).toISOString(),
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        endDate: endDate ? endDate + "-01" : undefined,
       },
     }, {
       onSuccess: () => {
@@ -136,6 +144,8 @@ export default function Rentals() {
           return mul * (a.clientName ?? "").localeCompare(b.clientName ?? "");
         case "startDate":
           return mul * (a.startDate ?? "").localeCompare(b.startDate ?? "");
+        case "endDate":
+          return mul * (a.endDate ?? "").localeCompare(b.endDate ?? "");
         case "term":
           return mul * (a.termMonths - b.termMonths);
         case "monthlyRate":
@@ -195,9 +205,9 @@ export default function Rentals() {
                 <FormField control={form.control} name="endDate" render={({ field }) => (
                   <FormItem>
                     <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormControl><Input type="month" {...field} /></FormControl>
                     <p className="text-xs text-muted-foreground">
-                      Leave blank to use Start Date + Term. After this date the agreement continues month-to-month.
+                      When set, this rental will appear in the Expiring Soon tab within 60 days of this date.
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -242,6 +252,7 @@ export default function Rentals() {
               <SortableHead label="Machine" col="machine" current={sortCol} dir={sortDir} onClick={handleSort} />
               <SortableHead label="Renter" col="renter" current={sortCol} dir={sortDir} onClick={handleSort} />
               <SortableHead label="Start Date" col="startDate" current={sortCol} dir={sortDir} onClick={handleSort} />
+              <SortableHead label="End Date" col="endDate" current={sortCol} dir={sortDir} onClick={handleSort} />
               <SortableHead label="Term" col="term" current={sortCol} dir={sortDir} onClick={handleSort} />
               <TableHead>Remaining</TableHead>
               <SortableHead label="Monthly Rent" col="monthlyRate" current={sortCol} dir={sortDir} onClick={handleSort} className="text-right" />
@@ -252,11 +263,11 @@ export default function Rentals() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={9} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : filteredRentals.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                   No rentals found.
                 </TableCell>
               </TableRow>
@@ -286,6 +297,7 @@ export default function Rentals() {
                   <TableCell>
                     {rental.startDate ? format(new Date(rental.startDate), 'MMM d, yyyy') : ''}
                   </TableCell>
+                  <TableCell>{formatEndDate(rental.endDate)}</TableCell>
                   <TableCell>{rental.termMonths} mo</TableCell>
                   <TableCell>
                     {rental.isMonthToMonth ? (
