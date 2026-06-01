@@ -42,8 +42,8 @@ type ImportRow = {
 };
 
 const CSV_COLUMN_MAP: Record<string, keyof ImportRow> = {
-  "renter name": "renterName",
   "renter": "renterName",
+  "renter name": "renterName",
   "name": "renterName",
   "email": "email",
   "phone": "phone",
@@ -60,6 +60,7 @@ const CSV_COLUMN_MAP: Record<string, keyof ImportRow> = {
   "costofmachine": "costOfMachine",
   "cost": "costOfMachine",
   "paid off": "paidOff",
+  "paid off?": "paidOff",
   "paidoff": "paidOff",
   "term": "termMonths",
   "term months": "termMonths",
@@ -241,9 +242,11 @@ export default function Clients() {
 
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Upload a CSV with any of these columns:{" "}
-                  <span className="font-mono text-xs">Renter Name, Email, Phone, Stage, Machine Code, Brand, Revenue, Cost of Machine, Paid Off, Term, Notes</span>.
-                  Rows with no Renter Name are skipped. Stage "Installed" → Active Renter, anything else → Lead.
+                  Supported columns from your file:{" "}
+                  <span className="font-mono text-xs">Renter, Stage, Brand, Machine Code, Revenue, Cost of Machine, Paid off?, Notes</span>.
+                  Dollar signs are stripped automatically from Revenue and Cost of Machine.
+                  Rows with no Renter are skipped. Stage "Installed" → Active Renter, anything else → Lead.
+                  Unrecognized columns (Machine Score, Customer Score, Renter Score, Home Score) are ignored.
                 </p>
 
                 <div className="flex items-center gap-3">
