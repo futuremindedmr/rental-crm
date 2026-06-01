@@ -10,4 +10,6 @@ export interface SquareStatus {
   connected: boolean;
   /** @nullable */
   merchantId?: string | null;
+  /** @nullable */
+  lastSyncAt?: string | null;
 }

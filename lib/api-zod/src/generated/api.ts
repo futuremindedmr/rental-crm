@@ -567,6 +567,14 @@ export const DeleteAgreementParams = zod.object({
 
 
 /**
+ * @summary Get Square OAuth authorization URL
+ */
+export const StartSquareOAuthResponse = zod.object({
+  "url": zod.string()
+})
+
+
+/**
  * @summary List synced Square payments
  */
 export const ListSquarePaymentsQueryParams = zod.object({
@@ -622,7 +630,8 @@ export const SyncSquareResponse = zod.object({
  */
 export const GetSquareStatusResponse = zod.object({
   "connected": zod.boolean(),
-  "merchantId": zod.string().nullish()
+  "merchantId": zod.string().nullish(),
+  "lastSyncAt": zod.string().nullish()
 })
 
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCurrentTenant,
@@ -6,20 +7,51 @@ import {
   getGetCurrentTenantQueryKey,
   useGetSquareStatus,
   useSyncSquare,
+  useStartSquareOAuth,
+  useDisconnectSquare,
   getGetSquareStatusQueryKey,
 } from "@workspace/api-client-react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Link2, Link2Off, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export default function Settings() {
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  // Detect OAuth callback result from query params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("squareConnected");
+    const error = params.get("squareError");
+    if (connected === "1") {
+      toast({ title: "Square connected", description: "Your Square account is now linked." });
+      qc.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error) {
+      const messages: Record<string, string> = {
+        not_configured: "Square credentials are not configured on the server.",
+        token_exchange_failed: "Could not exchange authorization code. Check your Square app settings.",
+        invalid_state: "Invalid OAuth state — please try again.",
+        server_error: "A server error occurred during Square authorization.",
+        access_denied: "Square authorization was denied.",
+      };
+      toast({
+        title: "Square connection failed",
+        description: messages[error] ?? `Error: ${error}`,
+        variant: "destructive",
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   const { data: tenantEnvelope, isLoading } = useGetCurrentTenant();
   const tenant = tenantEnvelope?.tenant ?? null;
   const updateTenant = useUpdateCurrentTenant();
-  const { toast } = useToast();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -30,12 +62,47 @@ export default function Settings() {
 
   const { data: squareStatus, isLoading: squareLoading } = useGetSquareStatus();
   const syncSquare = useSyncSquare();
+  const startOAuth = useStartSquareOAuth();
+  const disconnectSquare = useDisconnectSquare();
+
+  const handleConnect = () => {
+    startOAuth.mutate(undefined, {
+      onSuccess: (data) => {
+        window.location.href = data.url;
+      },
+      onError: (err) => {
+        toast({
+          title: "Cannot start Square connection",
+          description: err instanceof Error ? err.message : "Server error — check SQUARE_CLIENT_ID is set.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleDisconnect = () => {
+    disconnectSquare.mutate(undefined, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
+        toast({ title: "Square disconnected", description: "Your Square account has been unlinked." });
+      },
+      onError: (err) =>
+        toast({
+          title: "Disconnect failed",
+          description: err instanceof Error ? err.message : "Could not disconnect",
+          variant: "destructive",
+        }),
+    });
+  };
 
   const handleSyncSquare = () => {
     syncSquare.mutate(undefined, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         qc.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
-        toast({ title: "Synced", description: "Square data refreshed." });
+        toast({
+          title: "Sync complete",
+          description: `${result.paymentsImported} payments · ${result.invoicesImported} invoices · ${result.customersImported} customers matched`,
+        });
       },
       onError: (err) =>
         toast({
@@ -64,6 +131,8 @@ export default function Settings() {
       }
     );
   };
+
+  const connected = squareStatus?.connected ?? false;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -101,23 +170,81 @@ export default function Settings() {
         </div>
 
         <div className="border rounded-lg p-6 space-y-4 bg-card">
-          <h3 className="text-lg font-medium">Square Integration</h3>
-          <p className="text-sm text-muted-foreground">Manage your connection to Square for payment syncing.</p>
-          <div className="bg-muted p-4 rounded-md border flex items-center justify-between">
-            <div className="text-sm">
-              Status:{" "}
+          <div>
+            <h3 className="text-lg font-medium">Square Integration</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Connect your Square account to automatically sync customers, payments, and invoices.
+              The app works fully without Square — this is optional.
+            </p>
+          </div>
+
+          {/* Status row */}
+          <div className="rounded-md border bg-muted/40 p-4 space-y-3">
+            <div className="flex items-center gap-2">
               {squareLoading ? (
-                <span className="text-muted-foreground">Checking...</span>
-              ) : squareStatus?.connected ? (
-                <span className="text-green-600 font-medium">Connected</span>
+                <span className="text-sm text-muted-foreground">Checking connection…</span>
+              ) : connected ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-sm font-medium text-green-700">Connected</span>
+                  {squareStatus?.merchantId && (
+                    <span className="text-xs text-muted-foreground ml-1">· Merchant {squareStatus.merchantId}</span>
+                  )}
+                </>
               ) : (
-                <span className="text-muted-foreground font-medium">Disconnected</span>
+                <>
+                  <XCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium text-muted-foreground">Not connected</span>
+                </>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={handleSyncSquare} disabled={syncSquare.isPending}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncSquare.isPending ? "animate-spin" : ""}`} />
-              Sync Square
-            </Button>
+
+            {connected && squareStatus?.lastSyncAt && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                Last synced {format(new Date(squareStatus.lastSyncAt), "MMM d, yyyy 'at' h:mm a")}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-3">
+            {!connected ? (
+              <Button onClick={handleConnect} disabled={startOAuth.isPending}>
+                <Link2 className="h-4 w-4 mr-2" />
+                {startOAuth.isPending ? "Redirecting…" : "Connect Square"}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleSyncSquare}
+                  disabled={syncSquare.isPending}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${syncSquare.isPending ? "animate-spin" : ""}`} />
+                  {syncSquare.isPending ? "Syncing…" : "Sync now"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleDisconnect}
+                  disabled={disconnectSquare.isPending}
+                >
+                  <Link2Off className="h-4 w-4 mr-2" />
+                  Disconnect
+                </Button>
+              </>
+            )}
+          </div>
+
+          <div className="text-xs text-muted-foreground space-y-1 border-t pt-3">
+            <p className="font-medium text-foreground/70">Setup instructions</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Create a Square app at <a href="https://developer.squareup.com" target="_blank" rel="noopener noreferrer" className="underline">developer.squareup.com</a></li>
+              <li>Add your callback URL as a redirect URI: <code className="bg-muted px-1 rounded text-xs">/api/square/oauth/callback</code></li>
+              <li>Add <code className="bg-muted px-1 rounded text-xs">SQUARE_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-xs">SQUARE_CLIENT_SECRET</code> to Replit Secrets</li>
+              <li>Click "Connect Square" above</li>
+            </ol>
           </div>
         </div>
       </div>

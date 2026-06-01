@@ -414,10 +414,16 @@ export interface SquareSyncResult {
   invoicesImported: number;
 }
 
+export interface SquareOAuthStartResponse {
+  url: string;
+}
+
 export interface SquareStatus {
   connected: boolean;
   /** @nullable */
   merchantId?: string | null;
+  /** @nullable */
+  lastSyncAt?: string | null;
 }
 
 export interface DashboardStats {

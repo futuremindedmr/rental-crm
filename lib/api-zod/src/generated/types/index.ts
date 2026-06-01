@@ -47,6 +47,7 @@ export * from './rentalInput';
 export * from './rentalInputMachineStatus';
 export * from './rentalUpdate';
 export * from './squareInvoice';
+export * from './squareOAuthStartResponse';
 export * from './squarePayment';
 export * from './squareStatus';
 export * from './squareSyncResult';

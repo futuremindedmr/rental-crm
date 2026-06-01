@@ -50,6 +50,7 @@ import type {
   RentalInput,
   RentalUpdate,
   SquareInvoice,
+  SquareOAuthStartResponse,
   SquarePayment,
   SquareStatus,
   SquareSyncResult,
@@ -2146,6 +2147,153 @@ export const useDeleteAgreement = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteAgreementMutationOptions(options));
+    }
+
+export const getStartSquareOAuthUrl = () => {
+
+
+
+
+  return `/api/square/oauth/start`
+}
+
+/**
+ * @summary Get Square OAuth authorization URL
+ */
+export const startSquareOAuth = async ( options?: RequestInit): Promise<SquareOAuthStartResponse> => {
+
+  return customFetch<SquareOAuthStartResponse>(getStartSquareOAuthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStartSquareOAuthQueryKey = () => {
+    return [
+    `/api/square/oauth/start`
+    ] as const;
+    }
+
+
+export const getStartSquareOAuthQueryOptions = <TData = Awaited<ReturnType<typeof startSquareOAuth>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof startSquareOAuth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStartSquareOAuthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof startSquareOAuth>>> = ({ signal }) => startSquareOAuth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof startSquareOAuth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type StartSquareOAuthQueryResult = NonNullable<Awaited<ReturnType<typeof startSquareOAuth>>>
+export type StartSquareOAuthQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Get Square OAuth authorization URL
+ */
+
+export function useStartSquareOAuth<TData = Awaited<ReturnType<typeof startSquareOAuth>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof startSquareOAuth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getStartSquareOAuthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDisconnectSquareUrl = () => {
+
+
+
+
+  return `/api/square/disconnect`
+}
+
+/**
+ * @summary Disconnect Square integration
+ */
+export const disconnectSquare = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDisconnectSquareUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDisconnectSquareMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSquare>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectSquare>>, TError,void, TContext> => {
+
+const mutationKey = ['disconnectSquare'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectSquare>>, void> = () => {
+
+
+          return  disconnectSquare(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectSquareMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectSquare>>>
+
+    export type DisconnectSquareMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect Square integration
+ */
+export const useDisconnectSquare = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSquare>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectSquare>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDisconnectSquareMutationOptions(options));
     }
 
 export const getListSquarePaymentsUrl = (params?: ListSquarePaymentsParams,) => {

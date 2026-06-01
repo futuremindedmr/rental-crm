@@ -572,6 +572,34 @@ paths:
           description: Deleted
 
   # ── Square ────────────────────────────────────────────────────────────────
+  /square/oauth/start:
+    get:
+      operationId: startSquareOAuth
+      tags: [square]
+      summary: Get Square OAuth authorization URL
+      responses:
+        "200":
+          description: OAuth URL to redirect the user to
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquareOAuthStartResponse"
+        "503":
+          description: Square not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /square/disconnect:
+    delete:
+      operationId: disconnectSquare
+      tags: [square]
+      summary: Disconnect Square integration
+      responses:
+        "204":
+          description: Disconnected
+
   /square/payments:
     get:
       operationId: listSquarePayments
@@ -1305,6 +1333,13 @@ components:
         invoicesImported:
           type: integer
 
+    SquareOAuthStartResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+
     SquareStatus:
       type: object
       required: [connected]
@@ -1312,6 +1347,8 @@ components:
         connected:
           type: boolean
         merchantId:
+          type: ["string", "null"]
+        lastSyncAt:
           type: ["string", "null"]
 
     # ── Dashboard ────────────────────────────────────────────────────────────

@@ -1,12 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
-import { useGetDashboardStats, useListRentals, useGetRecentPayments, useListLeads } from "@workspace/api-client-react";
+import { useGetDashboardStats, useListRentals, useGetRecentPayments, useListLeads, useGetSquareStatus, useSyncSquare, getGetSquareStatusQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown, CalendarClock } from "lucide-react";
+import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown, CalendarClock, RefreshCw, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
@@ -103,12 +105,35 @@ export default function Dashboard() {
   const [cardOrder, setCardOrder] = useState<StatCardId[]>(loadOrder);
   const [metricsCollapsed, setMetricsCollapsed] = useState<boolean>(loadCollapsed);
 
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: expiringRentals, isLoading: expiringLoading } = useListRentals({ expiringSoon: true });
   const { data: recentPayments, isLoading: paymentsLoading } = useGetRecentPayments();
   const { data: leads, isLoading: leadsLoading } = useListLeads({});
+  const { data: squareStatus } = useGetSquareStatus();
+  const syncSquare = useSyncSquare();
 
   const openLeads = leads?.filter((l) => l.stage !== "converted") || [];
+
+  const handleDashboardSync = useCallback(() => {
+    syncSquare.mutate(undefined, {
+      onSuccess: (result) => {
+        qc.invalidateQueries({ queryKey: getGetSquareStatusQueryKey() });
+        toast({
+          title: "Sync complete",
+          description: `${result.paymentsImported} payments · ${result.invoicesImported} invoices · ${result.customersImported} customers matched`,
+        });
+      },
+      onError: (err) =>
+        toast({
+          title: "Sync failed",
+          description: err instanceof Error ? err.message : "Could not sync Square",
+          variant: "destructive",
+        }),
+    });
+  }, [syncSquare, qc, toast]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -266,6 +291,46 @@ export default function Dashboard() {
           {metricsCollapsed ? "Show metrics" : "Hide metrics"}
         </Button>
       </div>
+
+      {/* Square sync status banner */}
+      {squareStatus && (
+        squareStatus.connected ? (
+          <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50/60 px-4 py-2.5 text-sm">
+            <div className="flex items-center gap-2 text-green-800">
+              <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+              <span className="font-medium">Square connected</span>
+              {squareStatus.lastSyncAt && (
+                <span className="text-green-700/70">
+                  · Last synced {format(new Date(squareStatus.lastSyncAt), "MMM d 'at' h:mm a")}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-green-800 hover:text-green-900 hover:bg-green-100 gap-1.5"
+              onClick={handleDashboardSync}
+              disabled={syncSquare.isPending}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncSquare.isPending ? "animate-spin" : ""}`} />
+              {syncSquare.isPending ? "Syncing…" : "Sync"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-lg border border-dashed px-4 py-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+              Square not connected — sync payments and invoices automatically
+            </div>
+            <Link href="/settings">
+              <Button variant="ghost" size="sm" className="h-7 gap-1.5">
+                <Link2 className="h-3.5 w-3.5" />
+                Connect
+              </Button>
+            </Link>
+          </div>
+        )
+      )}
 
       <div
         className={cn(
