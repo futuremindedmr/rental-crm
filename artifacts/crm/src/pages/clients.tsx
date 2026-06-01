@@ -179,6 +179,19 @@ export default function Clients() {
     );
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = ["Renter Name", "Email", "Phone", "Stage", "Machine Code", "Brand", "Revenue", "Cost of Machine", "Paid Off", "Term", "Notes"];
+    const example = ["Jane Smith", "jane@example.com", "555-0100", "Installed", "MCH-001", "Acme Co", "250", "3000", "No", "24", "First machine"];
+    const csv = [headers, example].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "client-import-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportCsv = () => {
     const headers = ["Name", "Status", "Phone", "Email", "Property", "Active Rentals", "Added"];
     const escape = (val: unknown) => {
@@ -249,7 +262,7 @@ export default function Clients() {
                   Unrecognized columns (Machine Score, Customer Score, Renter Score, Home Score) are ignored.
                 </p>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()}>
                     Choose file
                   </Button>
@@ -261,6 +274,10 @@ export default function Clients() {
                     className="hidden"
                     onChange={handleFileChange}
                   />
+                  <Button variant="outline" type="button" onClick={handleDownloadTemplate} className="ml-auto">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download template
+                  </Button>
                 </div>
 
                 {previewRows.length > 0 && (
