@@ -1141,6 +1141,10 @@ components:
           type: array
           items:
             type: string
+        skippedReasons:
+          type: array
+          items:
+            type: string
 
     # ── Rental Agreement ─────────────────────────────────────────────────────
     RentalAgreement:

@@ -140,7 +140,8 @@ export const ImportClientsResponse = zod.object({
   "clientsCreated": zod.number(),
   "rentalsCreated": zod.number(),
   "skipped": zod.number(),
-  "errors": zod.array(zod.string())
+  "errors": zod.array(zod.string()),
+  "skippedReasons": zod.array(zod.string()).optional()
 })
 
 

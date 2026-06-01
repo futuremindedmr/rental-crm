@@ -174,6 +174,7 @@ router.post("/clients/import", async (req, res) => {
   let rentalsCreated = 0;
   let skipped = 0;
   const errors: string[] = [];
+  const skippedReasons: string[] = [];
 
   for (let i = 0; i < body.rows.length; i++) {
     const row = body.rows[i] as Record<string, unknown>;
@@ -182,6 +183,14 @@ router.post("/clients/import", async (req, res) => {
     if (!name) { skipped++; continue; }
 
     try {
+      const existing = await db.select({ id: clientsTable.id }).from(clientsTable)
+        .where(and(eq(clientsTable.tenantId, tenantId), ilike(clientsTable.name, name)))
+        .limit(1);
+      if (existing.length > 0) {
+        skipped++;
+        skippedReasons.push(`Client '${name}' already exists`);
+        continue;
+      }
       const stageRaw = typeof row.stage === "string" ? row.stage.trim().toLowerCase() : "";
       const status = stageRaw === "installed" ? "active_renter" : "lead";
 
@@ -224,7 +233,7 @@ router.post("/clients/import", async (req, res) => {
     }
   }
 
-  res.json({ clientsCreated, rentalsCreated, skipped, errors });
+  res.json({ clientsCreated, rentalsCreated, skipped, errors, skippedReasons });
 });
 
 export { computeMonthsRemaining };

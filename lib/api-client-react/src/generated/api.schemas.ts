@@ -273,6 +273,7 @@ export interface ClientImportResult {
   rentalsCreated: number;
   skipped: number;
   errors: string[];
+  skippedReasons?: string[];
 }
 
 export interface RentalAgreement {

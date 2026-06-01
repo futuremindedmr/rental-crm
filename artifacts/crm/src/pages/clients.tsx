@@ -164,6 +164,9 @@ export default function Clients() {
           if (result.rentalsCreated > 0) parts.push(`${result.rentalsCreated} rental${result.rentalsCreated !== 1 ? "s" : ""} created`);
           if (result.skipped > 0) parts.push(`${result.skipped} skipped`);
           toast({ title: "Import complete", description: parts.join(", ") + "." });
+          if (result.skippedReasons && result.skippedReasons.length > 0) {
+            toast({ title: `${result.skippedReasons.length} row${result.skippedReasons.length !== 1 ? "s" : ""} skipped`, description: result.skippedReasons.slice(0, 3).join("; ") });
+          }
           if (result.errors.length > 0) {
             toast({ title: `${result.errors.length} row error${result.errors.length !== 1 ? "s" : ""}`, description: result.errors.slice(0, 3).join("; "), variant: "destructive" });
           }

@@ -11,4 +11,5 @@ export interface ClientImportResult {
   rentalsCreated: number;
   skipped: number;
   errors: string[];
+  skippedReasons?: string[];
 }
