@@ -22,7 +22,7 @@ import Onboarding from "@/pages/onboarding";
 const queryClient = new QueryClient();
 
 function MainApp() {
-  const { isLoading, isAuthenticated, login } = useAuth();
+  const { isLoading, isAuthenticated, refetch } = useAuth();
   const qc = useQueryClient();
   const { data: tenantEnvelope, isLoading: tenantLoading } = useGetCurrentTenant({
     query: { enabled: isAuthenticated, queryKey: getGetCurrentTenantQueryKey() },
@@ -38,7 +38,7 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={login} />;
+    return <Login onAuthSuccess={refetch} />;
   }
 
   if (!tenant) {
