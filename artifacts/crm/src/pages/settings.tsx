@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@workspace/replit-auth-web";
 import {
   useGetCurrentTenant,
   useUpdateCurrentTenant,
@@ -10,7 +11,7 @@ import {
   useDisconnectSquare,
   getGetSquareStatusQueryKey,
 } from "@workspace/api-client-react";
-import { RefreshCw, Link2, Link2Off, CheckCircle2, XCircle, Clock, ArrowRightLeft, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Link2, Link2Off, CheckCircle2, XCircle, Clock, ArrowRightLeft, AlertTriangle, ChevronDown, ChevronUp, Users, Trash2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,205 @@ interface MigratePreview {
 }
 
 type MigrateStep = "idle" | "form" | "preview" | "done";
+
+// ── Manage Users types ─────────────────────────────────────────────────────
+
+interface TenantUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+// ── Manage Users card ──────────────────────────────────────────────────────
+
+function ManageUsersCard({ currentUserId }: { currentUserId: string }) {
+  const { toast } = useToast();
+  const [users, setUsers] = useState<TenantUser[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const loadUsers = async () => {
+    setLoadingList(true);
+    try {
+      const res = await fetch("/api/users", { credentials: "include" });
+      const data = await res.json();
+      if (res.ok) setUsers(data.users ?? []);
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  useEffect(() => { loadUsers(); }, []);
+
+  const resetForm = () => {
+    setEmail(""); setPassword(""); setFirstName(""); setLastName("");
+    setFormError(null); setShowForm(false);
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setCreating(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, firstName: firstName || undefined, lastName: lastName || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setFormError(data.error ?? "Could not create user."); return; }
+      toast({ title: "User created", description: `${email} can now sign in.` });
+      resetForm();
+      loadUsers();
+    } catch {
+      setFormError("Network error. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleRemove = async (user: TenantUser) => {
+    if (!confirm(`Remove ${user.email}? They will no longer be able to sign in.`)) return;
+    setRemovingId(user.id);
+    try {
+      const res = await fetch(`/api/users/${user.id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: "Could not remove user", description: data.error ?? "Server error.", variant: "destructive" });
+        return;
+      }
+      toast({ title: "User removed", description: `${user.email} has been removed.` });
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch {
+      toast({ title: "Network error", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const displayName = (u: TenantUser) =>
+    [u.firstName, u.lastName].filter(Boolean).join(" ") || null;
+
+  return (
+    <div className="border rounded-lg bg-card overflow-hidden">
+      <div className="flex items-center justify-between p-6">
+        <div className="flex items-center gap-3">
+          <Users className="h-5 w-5 text-muted-foreground shrink-0" />
+          <div>
+            <p className="font-medium">Manage Users</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Control who can sign in to this account
+            </p>
+          </div>
+        </div>
+        {!showForm && (
+          <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add user
+          </Button>
+        )}
+      </div>
+
+      <div className="border-t divide-y">
+        {/* User list */}
+        {loadingList ? (
+          <div className="px-6 py-4 text-sm text-muted-foreground">Loading…</div>
+        ) : users.length === 0 ? (
+          <div className="px-6 py-4 text-sm text-muted-foreground italic">No users found.</div>
+        ) : (
+          users.map((u) => (
+            <div key={u.id} className="flex items-center justify-between px-6 py-3.5">
+              <div className="min-w-0">
+                {displayName(u) && (
+                  <p className="text-sm font-medium truncate">{displayName(u)}</p>
+                )}
+                <p className={`text-sm truncate ${displayName(u) ? "text-muted-foreground" : "font-medium"}`}>
+                  {u.email}
+                  {u.id === currentUserId && (
+                    <span className="ml-2 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5">you</span>
+                  )}
+                </p>
+              </div>
+              {u.id !== currentUserId && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive shrink-0 ml-4"
+                  disabled={removingId === u.id}
+                  onClick={() => handleRemove(u)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))
+        )}
+
+        {/* Add user form */}
+        {showForm && (
+          <div className="px-6 py-5 space-y-4 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">New user</p>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="newFirstName">First name</Label>
+                  <Input id="newFirstName" placeholder="Jane" value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)} disabled={creating} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="newLastName">Last name</Label>
+                  <Input id="newLastName" placeholder="Smith" value={lastName}
+                    onChange={(e) => setLastName(e.target.value)} disabled={creating} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="newEmail">Email</Label>
+                <Input id="newEmail" type="email" placeholder="jane@example.com" value={email}
+                  onChange={(e) => { setEmail(e.target.value); setFormError(null); }}
+                  required disabled={creating} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword">Password</Label>
+                <Input id="newPassword" type="password" placeholder="At least 8 characters" value={password}
+                  onChange={(e) => { setPassword(e.target.value); setFormError(null); }}
+                  required disabled={creating} />
+              </div>
+              {formError && (
+                <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{formError}</p>
+              )}
+              <div className="flex gap-2 pt-1">
+                <Button type="submit" size="sm" disabled={creating}>
+                  {creating ? "Creating…" : "Create user"}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={resetForm} disabled={creating}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── Migration card ─────────────────────────────────────────────────────────
 
@@ -258,6 +458,7 @@ function MigrationCard() {
 export default function Settings() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -462,6 +663,9 @@ export default function Settings() {
             </ol>
           </div>
         </div>
+
+        {/* Manage users */}
+        {user?.id && <ManageUsersCard currentUserId={user.id} />}
 
         {/* Data migration */}
         <MigrationCard />

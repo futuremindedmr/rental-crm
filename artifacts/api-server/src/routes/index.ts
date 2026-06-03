@@ -11,11 +11,13 @@ import agreementsRouter from "./agreements";
 import squareRouter from "./square";
 import dashboardRouter from "./dashboard";
 import manualPaymentsRouter from "./manual_payments";
+import usersRouter from "./users";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(usersRouter);
 router.use(tenantsRouter);
 router.use(storageRouter);
 router.use(clientsRouter);
