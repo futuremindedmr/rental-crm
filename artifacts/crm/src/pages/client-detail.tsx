@@ -520,6 +520,7 @@ export default function ClientDetail() {
             <CardHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
               <CardTitle className="text-lg">Rental Agreements</CardTitle>
               <ObjectUploader
+                maxFileSize={15 * 1024 * 1024}
                 onGetUploadParameters={async (file) => {
                   const res = await fetch("/api/storage/uploads/request-url", {
                     method: "POST",

@@ -24,6 +24,12 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
     return;
   }
 
+  const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+  if (parsed.data.size > MAX_FILE_SIZE) {
+    res.status(413).json({ error: "File is too large. The maximum allowed size is 15 MB." });
+    return;
+  }
+
   try {
     const { name, size, contentType } = parsed.data;
 
