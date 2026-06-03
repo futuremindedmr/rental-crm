@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityLog,
+  ActivityLogInput,
   AgreementInput,
   AuthUserEnvelope,
   Client,
@@ -888,6 +890,227 @@ export const useDeleteClient = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteClientMutationOptions(options));
+    }
+
+export const getListActivityLogsUrl = (id: number,) => {
+
+
+
+
+  return `/api/clients/${id}/activity-logs`
+}
+
+/**
+ * @summary List activity log entries for a client
+ */
+export const listActivityLogs = async (id: number, options?: RequestInit): Promise<ActivityLog[]> => {
+
+  return customFetch<ActivityLog[]>(getListActivityLogsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListActivityLogsQueryKey = (id: number,) => {
+    return [
+    `/api/clients/${id}/activity-logs`
+    ] as const;
+    }
+
+
+export const getListActivityLogsQueryOptions = <TData = Awaited<ReturnType<typeof listActivityLogs>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActivityLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListActivityLogsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listActivityLogs>>> = ({ signal }) => listActivityLogs(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listActivityLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListActivityLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listActivityLogs>>>
+export type ListActivityLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List activity log entries for a client
+ */
+
+export function useListActivityLogs<TData = Awaited<ReturnType<typeof listActivityLogs>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActivityLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListActivityLogsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateActivityLogUrl = (id: number,) => {
+
+
+
+
+  return `/api/clients/${id}/activity-logs`
+}
+
+/**
+ * @summary Create an activity log entry
+ */
+export const createActivityLog = async (id: number,
+    activityLogInput: ActivityLogInput, options?: RequestInit): Promise<ActivityLog> => {
+
+  return customFetch<ActivityLog>(getCreateActivityLogUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      activityLogInput,)
+  }
+);}
+
+
+
+
+export const getCreateActivityLogMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivityLog>>, TError,{id: number;data: BodyType<ActivityLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createActivityLog>>, TError,{id: number;data: BodyType<ActivityLogInput>}, TContext> => {
+
+const mutationKey = ['createActivityLog'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createActivityLog>>, {id: number;data: BodyType<ActivityLogInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createActivityLog(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateActivityLogMutationResult = NonNullable<Awaited<ReturnType<typeof createActivityLog>>>
+    export type CreateActivityLogMutationBody = BodyType<ActivityLogInput>
+    export type CreateActivityLogMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an activity log entry
+ */
+export const useCreateActivityLog = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivityLog>>, TError,{id: number;data: BodyType<ActivityLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createActivityLog>>,
+        TError,
+        {id: number;data: BodyType<ActivityLogInput>},
+        TContext
+      > => {
+      return useMutation(getCreateActivityLogMutationOptions(options));
+    }
+
+export const getDeleteActivityLogUrl = (id: number,
+    logId: number,) => {
+
+
+
+
+  return `/api/clients/${id}/activity-logs/${logId}`
+}
+
+/**
+ * @summary Delete an activity log entry
+ */
+export const deleteActivityLog = async (id: number,
+    logId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteActivityLogUrl(id,logId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteActivityLogMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteActivityLog>>, TError,{id: number;logId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteActivityLog>>, TError,{id: number;logId: number}, TContext> => {
+
+const mutationKey = ['deleteActivityLog'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteActivityLog>>, {id: number;logId: number}> = (props) => {
+          const {id,logId} = props ?? {};
+
+          return  deleteActivityLog(id,logId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteActivityLogMutationResult = NonNullable<Awaited<ReturnType<typeof deleteActivityLog>>>
+
+    export type DeleteActivityLogMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an activity log entry
+ */
+export const useDeleteActivityLog = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteActivityLog>>, TError,{id: number;logId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteActivityLog>>,
+        TError,
+        {id: number;logId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteActivityLogMutationOptions(options));
     }
 
 export const getListPropertiesUrl = () => {

@@ -12,12 +12,14 @@ import squareRouter from "./square";
 import dashboardRouter from "./dashboard";
 import manualPaymentsRouter from "./manual_payments";
 import usersRouter from "./users";
+import activityLogsRouter from "./activity_logs";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(usersRouter);
+router.use(activityLogsRouter);
 router.use(tenantsRouter);
 router.use(storageRouter);
 router.use(clientsRouter);

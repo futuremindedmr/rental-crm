@@ -438,6 +438,43 @@ export interface DashboardStats {
   totalClients: number;
 }
 
+export type ActivityLogType = typeof ActivityLogType[keyof typeof ActivityLogType];
+
+
+export const ActivityLogType = {
+  Call: 'Call',
+  Text: 'Text',
+  Email: 'Email',
+  Visit: 'Visit',
+} as const;
+
+export interface ActivityLog {
+  id: number;
+  clientId: number;
+  type: ActivityLogType;
+  /** @nullable */
+  notes?: string | null;
+  occurredAt: string;
+  createdAt: string;
+}
+
+export type ActivityLogInputType = typeof ActivityLogInputType[keyof typeof ActivityLogInputType];
+
+
+export const ActivityLogInputType = {
+  Call: 'Call',
+  Text: 'Text',
+  Email: 'Email',
+  Visit: 'Visit',
+} as const;
+
+export interface ActivityLogInput {
+  type: ActivityLogInputType;
+  /** @nullable */
+  notes?: string | null;
+  occurredAt: string;
+}
+
 export interface UploadUrlRequest {
   /** @minLength 1 */
   name: string;

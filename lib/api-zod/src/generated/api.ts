@@ -211,6 +211,47 @@ export const DeleteClientParams = zod.object({
 
 
 /**
+ * @summary List activity log entries for a client
+ */
+export const ListActivityLogsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListActivityLogsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "type": zod.enum(['Call', 'Text', 'Email', 'Visit']),
+  "notes": zod.string().nullish(),
+  "occurredAt": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListActivityLogsResponse = zod.array(ListActivityLogsResponseItem)
+
+
+/**
+ * @summary Create an activity log entry
+ */
+export const CreateActivityLogParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateActivityLogBody = zod.object({
+  "type": zod.enum(['Call', 'Text', 'Email', 'Visit']),
+  "notes": zod.string().nullish(),
+  "occurredAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an activity log entry
+ */
+export const DeleteActivityLogParams = zod.object({
+  "id": zod.coerce.number(),
+  "logId": zod.coerce.number()
+})
+
+
+/**
  * @summary List properties
  */
 export const ListPropertiesResponseItem = zod.object({

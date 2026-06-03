@@ -13,10 +13,14 @@ import {
   useCreateRental,
   useUpdateRental,
   useDeleteRental,
+  useListActivityLogs,
+  useCreateActivityLog,
+  useDeleteActivityLog,
   getListAgreementsQueryKey,
   getGetClientQueryKey,
   getListRentalsQueryKey,
   getListLeadsQueryKey,
+  getListActivityLogsQueryKey,
   type Rental
 } from "@workspace/api-client-react";
 import { useRoute, useLocation } from "wouter";
@@ -34,7 +38,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ArrowLeft, Edit, Trash2, Download, FileText, Upload, Plus, Star } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Download, FileText, Upload, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 
@@ -71,15 +75,28 @@ export default function ClientDetail() {
   const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
   const [editRentalDialogOpen, setEditRentalDialogOpen] = useState(false);
   const [editingRental, setEditingRental] = useState<Rental | null>(null);
+
+  // Activity log form state
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [activityType, setActivityType] = useState<"Call" | "Text" | "Email" | "Visit">("Call");
+  const [activityNotes, setActivityNotes] = useState("");
+  const [activityOccurredAt, setActivityOccurredAt] = useState(() => {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    return now.toISOString().slice(0, 16);
+  });
   
   const { data: client, isLoading: clientLoading } = useGetClient(clientId, { query: { enabled: !!clientId } });
   const { data: rentals, isLoading: rentalsLoading } = useListRentals({ clientId }, { query: { enabled: !!clientId } });
   const { data: agreements, isLoading: agreementsLoading } = useListAgreements(clientId, { query: { enabled: !!clientId } });
   const { data: payments, isLoading: paymentsLoading } = useListSquarePayments({ clientId }, { query: { enabled: !!clientId } });
   const { data: leads, isLoading: leadsLoading } = useListLeads({ clientId }, { query: { enabled: !!clientId } });
+  const { data: activityLogs, isLoading: activityLogsLoading } = useListActivityLogs(clientId, { query: { enabled: !!clientId } });
 
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
+  const createActivityLogMutation = useCreateActivityLog();
+  const deleteActivityLogMutation = useDeleteActivityLog();
   const createRentalMutation = useCreateRental();
   const updateRentalMutation = useUpdateRental();
   const deleteRentalMutation = useDeleteRental();
@@ -319,6 +336,7 @@ export default function ClientDetail() {
           <TabsTrigger value="agreements">Agreements</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="lead">Lead</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
         
         <TabsContent value="rentals" className="mt-4">
@@ -662,6 +680,165 @@ export default function ClientDetail() {
                   }} disabled={createLeadMutation.isPending}>
                     {createLeadMutation.isPending ? "Adding..." : "Add to Pipeline"}
                   </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Activity Log ─────────────────────────────────────────── */}
+        <TabsContent value="activity" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
+              <CardTitle className="text-lg">Activity Log</CardTitle>
+              {!showActivityForm && (
+                <Button size="sm" onClick={() => {
+                  const now = new Date();
+                  now.setSeconds(0, 0);
+                  setActivityOccurredAt(now.toISOString().slice(0, 16));
+                  setActivityType("Call");
+                  setActivityNotes("");
+                  setShowActivityForm(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" /> Log Interaction
+                </Button>
+              )}
+            </CardHeader>
+
+            {showActivityForm && (
+              <div className="border-b px-6 py-5 bg-muted/20 space-y-4">
+                <p className="text-sm font-medium">New entry</p>
+
+                {/* Type selector */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Type</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {(["Call", "Text", "Email", "Visit"] as const).map((t) => {
+                      const icons = { Call: Phone, Text: MessageSquare, Email: Mail, Visit: MapPin };
+                      const Icon = icons[t];
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setActivityType(t)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-medium transition-colors ${
+                            activityType === t
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background hover:bg-muted border-border"
+                          }`}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Date & time */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Date &amp; Time</label>
+                  <Input
+                    type="datetime-local"
+                    value={activityOccurredAt}
+                    onChange={(e) => setActivityOccurredAt(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <textarea
+                    value={activityNotes}
+                    onChange={(e) => setActivityNotes(e.target.value)}
+                    placeholder="What happened? Any follow-up needed?"
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={createActivityLogMutation.isPending || !activityOccurredAt}
+                    onClick={() => {
+                      const localDt = new Date(activityOccurredAt);
+                      createActivityLogMutation.mutate(
+                        { id: clientId, data: { type: activityType, notes: activityNotes || null, occurredAt: localDt.toISOString() } },
+                        {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: getListActivityLogsQueryKey(clientId) });
+                            setShowActivityForm(false);
+                            setActivityNotes("");
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    {createActivityLogMutation.isPending ? "Saving…" : "Save entry"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowActivityForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <CardContent className="p-0">
+              {activityLogsLoading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading activity…</div>
+              ) : !activityLogs?.length ? (
+                <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
+                  <Activity className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  No interactions logged yet.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {activityLogs.map((log) => {
+                    const typeConfig: Record<string, { icon: React.ElementType; className: string }> = {
+                      Call:  { icon: Phone,          className: "bg-blue-100 text-blue-800"   },
+                      Text:  { icon: MessageSquare,  className: "bg-purple-100 text-purple-800" },
+                      Email: { icon: Mail,           className: "bg-amber-100 text-amber-800"  },
+                      Visit: { icon: MapPin,         className: "bg-green-100 text-green-800"  },
+                    };
+                    const cfg = typeConfig[log.type] ?? { icon: Activity, className: "bg-muted text-muted-foreground" };
+                    const Icon = cfg.icon;
+                    return (
+                      <div key={log.id} className="flex items-start gap-4 px-6 py-4 group hover:bg-muted/30">
+                        <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium shrink-0 mt-0.5 ${cfg.className}`}>
+                          <Icon className="h-3 w-3" />
+                          {log.type}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(log.occurredAt), "MMM d, yyyy 'at' h:mm a")}
+                          </div>
+                          {log.notes ? (
+                            <p className="text-sm whitespace-pre-wrap">{log.notes}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No notes</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => {
+                            if (confirm("Delete this activity log entry?")) {
+                              deleteActivityLogMutation.mutate(
+                                { id: clientId, logId: log.id },
+                                { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListActivityLogsQueryKey(clientId) }) }
+                              );
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.2.0
  */
 
+export * from './activityLog';
+export * from './activityLogInput';
+export * from './activityLogInputType';
+export * from './activityLogType';
 export * from './agreementInput';
 export * from './authUser';
 export * from './authUserEnvelope';

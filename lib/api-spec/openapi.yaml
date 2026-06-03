@@ -235,6 +235,71 @@ paths:
         "204":
           description: Deleted
 
+  # ── Activity logs ─────────────────────────────────────────────────────────
+  /clients/{id}/activity-logs:
+    get:
+      operationId: listActivityLogs
+      tags: [clients]
+      summary: List activity log entries for a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+    post:
+      operationId: createActivityLog
+      tags: [clients]
+      summary: Create an activity log entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityLogInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLog"
+
+  /clients/{id}/activity-logs/{logId}:
+    delete:
+      operationId: deleteActivityLog
+      tags: [clients]
+      summary: Delete an activity log entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   # ── Properties ─────────────────────────────────────────────────────────────
   /properties:
     get:
@@ -1374,6 +1439,37 @@ components:
           type: number
         totalClients:
           type: integer
+
+    # ── Activity logs ────────────────────────────────────────────────────────
+    ActivityLog:
+      type: object
+      required: [id, clientId, type, occurredAt, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        type:
+          type: string
+          enum: [Call, Text, Email, Visit]
+        notes:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
+        createdAt:
+          type: string
+
+    ActivityLogInput:
+      type: object
+      required: [type, occurredAt]
+      properties:
+        type:
+          type: string
+          enum: [Call, Text, Email, Visit]
+        notes:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
 
     # ── Storage ──────────────────────────────────────────────────────────────
     UploadUrlRequest:
