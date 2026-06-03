@@ -21,12 +21,20 @@ const LoginBody = z.object({
   password: z.string().min(1),
 });
 
+const isProduction = process.env.NODE_ENV === "production";
+
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+    path: "/",
+  };
+}
+
 function setSessionCookie(res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+    ...sessionCookieOptions(),
     maxAge: SESSION_TTL,
   });
 }
@@ -97,7 +105,7 @@ router.post("/auth/login", async (req: Request, res: Response) => {
 router.post("/auth/logout", async (req: Request, res: Response) => {
   const sid = getSessionId(req);
   if (sid) await deleteSession(sid);
-  res.clearCookie(SESSION_COOKIE, { path: "/" });
+  res.clearCookie(SESSION_COOKIE, sessionCookieOptions());
   res.status(204).send();
 });
 
