@@ -13,11 +13,9 @@ import dashboardRouter from "./dashboard";
 import manualPaymentsRouter from "./manual_payments";
 import usersRouter from "./users";
 import activityLogsRouter from "./activity_logs";
-import seedRouter from "./seed";
 
 const router: IRouter = Router();
 
-router.use(seedRouter);
 router.use(healthRouter);
 router.use(authRouter);
 router.use(usersRouter);
