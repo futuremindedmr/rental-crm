@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeySquare, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,10 +46,14 @@ export default function Login({ onAuthSuccess }: LoginProps) {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="w-full max-w-sm mx-auto px-6">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <KeySquare className="h-10 w-10 text-primary" />
+          <div className="flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="56 48 88 104" width="48" height="48">
+              <polygon points="100,52 140,75 140,125 100,148 60,125 60,75" fill="#f5a623"/>
+              <rect x="78" y="80" width="44" height="9" rx="3" fill="#0f1c2e"/>
+              <rect x="96" y="80" width="9" height="42" rx="3" fill="#0f1c2e"/>
+            </svg>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">RentTrack</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Trackable</h1>
           <p className="mt-2 text-muted-foreground text-sm">
             Washer &amp; dryer rental management for your business
           </p>

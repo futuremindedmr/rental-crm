@@ -8,7 +8,6 @@ import {
   FileText,
   CreditCard,
   Settings,
-  KeySquare,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -48,9 +47,13 @@ export function Layout({ children, tenantName }: LayoutProps) {
         <div className="h-16 flex items-center border-b border-sidebar-border relative px-3">
           {!collapsed && (
             <div className="flex items-center gap-2 font-bold text-lg text-sidebar-primary-foreground flex-1 min-w-0">
-              <KeySquare className="h-6 w-6 text-accent flex-shrink-0" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="56 48 88 104" width="36" height="36" className="flex-shrink-0">
+                <polygon points="100,52 140,75 140,125 100,148 60,125 60,75" fill="#f5a623"/>
+                <rect x="78" y="80" width="44" height="9" rx="3" fill="#0f1c2e"/>
+                <rect x="96" y="80" width="9" height="42" rx="3" fill="#0f1c2e"/>
+              </svg>
               <div className="leading-tight min-w-0">
-                <div>RentTrack</div>
+                <div>Trackable</div>
                 {tenantName && (
                   <div className="text-xs font-normal text-sidebar-foreground/60 truncate max-w-[120px]">
                     {tenantName}
@@ -61,7 +64,11 @@ export function Layout({ children, tenantName }: LayoutProps) {
           )}
           {collapsed && (
             <div className="flex items-center justify-center w-full">
-              <KeySquare className="h-6 w-6 text-accent" />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="56 48 88 104" width="28" height="28">
+                <polygon points="100,52 140,75 140,125 100,148 60,125 60,75" fill="#f5a623"/>
+                <rect x="78" y="80" width="44" height="9" rx="3" fill="#0f1c2e"/>
+                <rect x="96" y="80" width="9" height="42" rx="3" fill="#0f1c2e"/>
+              </svg>
             </div>
           )}
           <button
