@@ -8,8 +8,7 @@ import {
   useCreateAgreement,
   useDeleteAgreement,
   useListSquarePayments,
-  useListLeads,
-  useCreateLead,
+  useListManualPayments,
   useCreateRental,
   useUpdateRental,
   useDeleteRental,
@@ -19,7 +18,7 @@ import {
   getListAgreementsQueryKey,
   getGetClientQueryKey,
   getListRentalsQueryKey,
-  getListLeadsQueryKey,
+  getListManualPaymentsQueryKey,
   getListActivityLogsQueryKey,
   type Rental
 } from "@workspace/api-client-react";
@@ -90,7 +89,7 @@ export default function ClientDetail() {
   const { data: rentals, isLoading: rentalsLoading } = useListRentals({ clientId }, { query: { enabled: !!clientId } });
   const { data: agreements, isLoading: agreementsLoading } = useListAgreements(clientId, { query: { enabled: !!clientId } });
   const { data: payments, isLoading: paymentsLoading } = useListSquarePayments({ clientId }, { query: { enabled: !!clientId } });
-  const { data: leads, isLoading: leadsLoading } = useListLeads({ clientId }, { query: { enabled: !!clientId } });
+  const { data: manualPayments, isLoading: manualPaymentsLoading } = useListManualPayments({ clientId }, { query: { enabled: !!clientId } });
   const { data: activityLogs, isLoading: activityLogsLoading } = useListActivityLogs(clientId, { query: { enabled: !!clientId } });
 
   const updateClientMutation = useUpdateClient();
@@ -102,7 +101,6 @@ export default function ClientDetail() {
   const deleteRentalMutation = useDeleteRental();
   const createAgreementMutation = useCreateAgreement();
   const deleteAgreementMutation = useDeleteAgreement();
-  const createLeadMutation = useCreateLead();
 
   const editForm = useForm<z.infer<typeof editClientSchema>>({
     resolver: zodResolver(editClientSchema),
@@ -252,8 +250,6 @@ export default function ClientDetail() {
     }
   };
 
-  const clientLead = leads?.[0];
-
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center gap-4">
@@ -333,9 +329,8 @@ export default function ClientDetail() {
       <Tabs defaultValue="rentals" className="w-full">
         <TabsList>
           <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="agreements">Agreements</TabsTrigger>
+          <TabsTrigger value="agreements">Files</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="lead">Lead</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
         
@@ -446,7 +441,7 @@ export default function ClientDetail() {
                     <TableRow>
                       <TableHead className="px-6">Unit</TableHead>
                       <TableHead>Start Date</TableHead>
-                      <TableHead>Term</TableHead>
+                      <TableHead>End Date</TableHead>
                       <TableHead>Remaining</TableHead>
                       <TableHead>Rate</TableHead>
                       <TableHead></TableHead>
@@ -471,7 +466,7 @@ export default function ClientDetail() {
                             )}
                           </TableCell>
                           <TableCell>{rental.startDate ? format(new Date(rental.startDate), 'MMM d, yyyy') : '—'}</TableCell>
-                          <TableCell>{rental.termMonths} mo</TableCell>
+                          <TableCell>{rental.endDate ? format(new Date(rental.endDate), 'MMM yyyy') : '—'}</TableCell>
                           <TableCell>
                             {rental.monthsRemaining <= 2 ? (
                               <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
@@ -518,7 +513,7 @@ export default function ClientDetail() {
         <TabsContent value="agreements" className="mt-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
-              <CardTitle className="text-lg">Rental Agreements</CardTitle>
+              <CardTitle className="text-lg">Files</CardTitle>
               <ObjectUploader
                 maxFileSize={15 * 1024 * 1024}
                 onGetUploadParameters={async (file) => {
@@ -542,16 +537,16 @@ export default function ClientDetail() {
                   }
                 }}
               >
-                Upload Agreement
+                Upload File
               </ObjectUploader>
             </CardHeader>
             <CardContent className="p-0">
               {agreementsLoading ? (
-                <div className="p-8 text-center text-muted-foreground">Loading agreements...</div>
+                <div className="p-8 text-center text-muted-foreground">Loading files...</div>
               ) : agreements?.length === 0 ? (
                 <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
                   <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                  No agreements uploaded.
+                  No files uploaded.
                 </div>
               ) : (
                 <Table>
@@ -600,17 +595,52 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments" className="mt-4">
+        <TabsContent value="payments" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-lg">Payment History</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {manualPaymentsLoading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading payments...</div>
+              ) : !manualPayments?.length ? (
+                <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
+                  No manual payments logged for this client.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-6">Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {manualPayments.map(payment => (
+                      <TableRow key={payment.id}>
+                        <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), 'MMM d, yyyy') : '—'}</TableCell>
+                        <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
+                        <TableCell className="capitalize">{payment.paymentMethod.replace('_', ' ')}</TableCell>
+                        <TableCell className="text-muted-foreground">{payment.notes || '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader className="border-b px-6 py-4">
               <CardTitle className="text-lg">Square Payments</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {paymentsLoading ? (
-                <div className="p-8 text-center text-muted-foreground">Loading payments...</div>
-              ) : payments?.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">Loading Square payments...</div>
+              ) : !payments?.length ? (
                 <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
-                  No payments found for this client.
+                  No Square payments found for this client.
                 </div>
               ) : (
                 <Table>
@@ -623,7 +653,7 @@ export default function ClientDetail() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payments?.map(payment => (
+                    {payments.map(payment => (
                       <TableRow key={payment.id}>
                         <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), 'MMM d, yyyy') : '—'}</TableCell>
                         <TableCell className="font-medium">${(payment.amount / 100).toFixed(2)}</TableCell>
@@ -637,51 +667,6 @@ export default function ClientDetail() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="lead" className="mt-4">
-          <Card>
-            <CardHeader className="border-b px-6 py-4">
-              <CardTitle className="text-lg">Lead Pipeline</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {leadsLoading ? (
-                <div className="text-muted-foreground">Loading lead status...</div>
-              ) : clientLead ? (
-                <div className="space-y-4 border p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Current Stage</div>
-                      <Badge className="text-sm px-3 py-1 bg-primary text-primary-foreground">{clientLead.stage.replace('_', ' ').toUpperCase()}</Badge>
-                    </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      Added {clientLead.createdAt ? format(new Date(clientLead.createdAt), 'MMM d, yyyy') : ''}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Notes</div>
-                    <p className="bg-background border p-3 rounded text-sm min-h-[60px]">{clientLead.notes || 'No notes added.'}</p>
-                  </div>
-                  <div className="pt-2">
-                    <Button variant="outline" onClick={() => setLocation("/leads")}>View in Pipeline</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center p-8 border border-dashed rounded-md">
-                  <p className="text-muted-foreground mb-4">This client is not currently in the lead pipeline.</p>
-                  <Button onClick={() => {
-                    createLeadMutation.mutate({ 
-                      data: { clientId, stage: 'contacted', notes: 'Added from client detail page' } 
-                    }, {
-                      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListLeadsQueryKey({ clientId }) })
-                    });
-                  }} disabled={createLeadMutation.isPending}>
-                    {createLeadMutation.isPending ? "Adding..." : "Add to Pipeline"}
-                  </Button>
-                </div>
               )}
             </CardContent>
           </Card>

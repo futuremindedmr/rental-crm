@@ -348,6 +348,7 @@ export const ManualPaymentInputPaymentMethod = {
   zelle: 'zelle',
   venmo: 'venmo',
   bank_transfer: 'bank_transfer',
+  square: 'square',
 } as const;
 
 export interface ManualPaymentInput {
@@ -368,6 +369,7 @@ export const ManualPaymentUpdatePaymentMethod = {
   zelle: 'zelle',
   venmo: 'venmo',
   bank_transfer: 'bank_transfer',
+  square: 'square',
 } as const;
 
 export interface ManualPaymentUpdate {

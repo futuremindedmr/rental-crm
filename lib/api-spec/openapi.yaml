@@ -1323,7 +1323,7 @@ components:
           type: string
         paymentMethod:
           type: string
-          enum: [cash, check, zelle, venmo, bank_transfer]
+          enum: [cash, check, zelle, venmo, bank_transfer, square]
         notes:
           type: ["string", "null"]
 
@@ -1338,7 +1338,7 @@ components:
           type: string
         paymentMethod:
           type: string
-          enum: [cash, check, zelle, venmo, bank_transfer]
+          enum: [cash, check, zelle, venmo, bank_transfer, square]
         notes:
           type: ["string", "null"]
 

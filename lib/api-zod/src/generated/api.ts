@@ -703,7 +703,7 @@ export const CreateManualPaymentBody = zod.object({
   "clientId": zod.number(),
   "amount": zod.number(),
   "paymentDate": zod.string(),
-  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer']),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer', 'square']),
   "notes": zod.string().nullish()
 })
 
@@ -719,7 +719,7 @@ export const UpdateManualPaymentBody = zod.object({
   "clientId": zod.number().optional(),
   "amount": zod.number().optional(),
   "paymentDate": zod.string().optional(),
-  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer']).optional(),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer', 'square']).optional(),
   "notes": zod.string().nullish()
 })
 

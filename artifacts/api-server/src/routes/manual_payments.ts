@@ -11,7 +11,7 @@ const CreateManualPaymentBody = z.object({
   clientId: z.number().int().positive(),
   amount: z.number().positive(),
   paymentDate: z.string().min(1),
-  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer"]),
+  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer", "square"]),
   notes: z.string().nullable().optional(),
 });
 
@@ -19,7 +19,7 @@ const UpdateManualPaymentBody = z.object({
   clientId: z.number().int().positive().optional(),
   amount: z.number().positive().optional(),
   paymentDate: z.string().min(1).optional(),
-  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer"]).optional(),
+  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer", "square"]).optional(),
   notes: z.string().nullable().optional(),
 });
 

@@ -246,6 +246,7 @@ export default function Payments() {
                           <SelectItem value="zelle">Zelle</SelectItem>
                           <SelectItem value="venmo">Venmo</SelectItem>
                           <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="square">Square</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
