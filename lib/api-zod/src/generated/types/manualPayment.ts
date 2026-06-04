@@ -5,6 +5,7 @@
  * Washer & Dryer Rental CRM API
  * OpenAPI spec version: 0.2.0
  */
+import type { ManualPaymentPaymentMethod } from './manualPaymentPaymentMethod';
 
 export interface ManualPayment {
   id: number;
@@ -14,7 +15,7 @@ export interface ManualPayment {
   clientName?: string | null;
   amount: number;
   paymentDate: string;
-  paymentMethod: string;
+  paymentMethod: ManualPaymentPaymentMethod;
   /** @nullable */
   notes?: string | null;
   createdAt: string;

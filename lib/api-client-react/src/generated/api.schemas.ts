@@ -325,6 +325,18 @@ export interface AgreementInput {
   objectPath: string;
 }
 
+export type ManualPaymentPaymentMethod = typeof ManualPaymentPaymentMethod[keyof typeof ManualPaymentPaymentMethod];
+
+
+export const ManualPaymentPaymentMethod = {
+  cash: 'cash',
+  check: 'check',
+  zelle: 'zelle',
+  venmo: 'venmo',
+  bank_transfer: 'bank_transfer',
+  square: 'square',
+} as const;
+
 export interface ManualPayment {
   id: number;
   /** @nullable */
@@ -333,7 +345,7 @@ export interface ManualPayment {
   clientName?: string | null;
   amount: number;
   paymentDate: string;
-  paymentMethod: string;
+  paymentMethod: ManualPaymentPaymentMethod;
   /** @nullable */
   notes?: string | null;
   createdAt: string;

@@ -19,13 +19,14 @@ const METHOD_LABELS: Record<string, string> = {
   zelle: "Zelle",
   venmo: "Venmo",
   bank_transfer: "Bank Transfer",
+  square: "Square",
 };
 
 const paymentFormSchema = z.object({
   clientId: z.coerce.number().min(1, "Client is required"),
   amount: z.coerce.number().positive("Amount must be positive"),
   paymentDate: z.string().min(1, "Date is required"),
-  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer"]),
+  paymentMethod: z.enum(["cash", "check", "zelle", "venmo", "bank_transfer", "square"]),
   notes: z.string().optional(),
 });
 
@@ -76,7 +77,7 @@ export default function Payments() {
       clientId: p.clientId ?? 0,
       amount: p.amount,
       paymentDate: p.paymentDate ? p.paymentDate.split("T")[0] : new Date().toISOString().split("T")[0],
-      paymentMethod: (["cash", "check", "zelle", "venmo", "bank_transfer"].includes(p.paymentMethod)
+      paymentMethod: (["cash", "check", "zelle", "venmo", "bank_transfer", "square"].includes(p.paymentMethod)
         ? p.paymentMethod
         : "cash") as PaymentForm["paymentMethod"],
       notes: p.notes ?? "",

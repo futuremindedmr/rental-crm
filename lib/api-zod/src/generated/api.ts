@@ -689,7 +689,7 @@ export const ListManualPaymentsResponseItem = zod.object({
   "clientName": zod.string().nullish(),
   "amount": zod.number(),
   "paymentDate": zod.string(),
-  "paymentMethod": zod.string(),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer', 'square']),
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -729,7 +729,7 @@ export const UpdateManualPaymentResponse = zod.object({
   "clientName": zod.string().nullish(),
   "amount": zod.number(),
   "paymentDate": zod.string(),
-  "paymentMethod": zod.string(),
+  "paymentMethod": zod.enum(['cash', 'check', 'zelle', 'venmo', 'bank_transfer', 'square']),
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })

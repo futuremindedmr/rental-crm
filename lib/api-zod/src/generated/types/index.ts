@@ -40,6 +40,7 @@ export * from './listSquarePaymentsParams';
 export * from './manualPayment';
 export * from './manualPaymentInput';
 export * from './manualPaymentInputPaymentMethod';
+export * from './manualPaymentPaymentMethod';
 export * from './manualPaymentUpdate';
 export * from './manualPaymentUpdatePaymentMethod';
 export * from './property';
