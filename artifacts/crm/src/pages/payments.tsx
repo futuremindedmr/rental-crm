@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { useListSquarePayments, useListManualPayments, useCreateManualPayment, useUpdateManualPayment, useDeleteManualPayment, useListClients } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useListSquarePayments, useListManualPayments, useCreateManualPayment, useUpdateManualPayment, useDeleteManualPayment, useListClients, getListManualPaymentsQueryKey } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,12 +54,21 @@ export default function Payments() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const queryClient = useQueryClient();
+
   const { data: squarePayments, isLoading: squareLoading } = useListSquarePayments();
   const { data: manualPayments, isLoading: manualLoading } = useListManualPayments();
   const { data: clients } = useListClients({});
   const createManualPayment = useCreateManualPayment();
   const updateManualPayment = useUpdateManualPayment();
   const deleteManualPayment = useDeleteManualPayment();
+
+  function invalidateManualPayments(clientId?: number | null) {
+    queryClient.invalidateQueries({ queryKey: getListManualPaymentsQueryKey() });
+    if (clientId) {
+      queryClient.invalidateQueries({ queryKey: getListManualPaymentsQueryKey({ clientId }) });
+    }
+  }
 
   const form = useForm<PaymentForm>({
     resolver: zodResolver(paymentFormSchema),
@@ -92,6 +102,7 @@ export default function Payments() {
         { id: editingId, data: body },
         {
           onSuccess: () => {
+            invalidateManualPayments(data.clientId);
             setDialogOpen(false);
             setEditingId(null);
           },
@@ -102,6 +113,7 @@ export default function Payments() {
         { data: body },
         {
           onSuccess: () => {
+            invalidateManualPayments(data.clientId);
             setDialogOpen(false);
           },
         },
@@ -111,10 +123,12 @@ export default function Payments() {
 
   const onDelete = () => {
     if (editingId == null) return;
+    const clientId = form.getValues("clientId");
     deleteManualPayment.mutate(
       { id: editingId },
       {
         onSuccess: () => {
+          invalidateManualPayments(clientId);
           setDialogOpen(false);
           setEditingId(null);
         },
