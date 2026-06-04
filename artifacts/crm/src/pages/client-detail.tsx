@@ -442,6 +442,7 @@ export default function ClientDetail() {
                       <TableHead className="px-6">Unit</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>End Date</TableHead>
+                      <TableHead>Term</TableHead>
                       <TableHead>Remaining</TableHead>
                       <TableHead>Rate</TableHead>
                       <TableHead></TableHead>
@@ -467,6 +468,7 @@ export default function ClientDetail() {
                           </TableCell>
                           <TableCell>{rental.startDate ? format(new Date(rental.startDate), 'MMM d, yyyy') : '—'}</TableCell>
                           <TableCell>{rental.endDate ? format(new Date(rental.endDate), 'MMM yyyy') : '—'}</TableCell>
+                          <TableCell>{rental.termMonths} mo</TableCell>
                           <TableCell>
                             {rental.monthsRemaining <= 2 ? (
                               <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
@@ -598,41 +600,6 @@ export default function ClientDetail() {
         <TabsContent value="payments" className="mt-4 space-y-4">
           <Card>
             <CardHeader className="border-b px-6 py-4">
-              <CardTitle className="text-lg">Payment History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {manualPaymentsLoading ? (
-                <div className="p-8 text-center text-muted-foreground">Loading payments...</div>
-              ) : !manualPayments?.length ? (
-                <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
-                  No manual payments logged for this client.
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="px-6">Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {manualPayments.map(payment => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), 'MMM d, yyyy') : '—'}</TableCell>
-                        <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
-                        <TableCell className="capitalize">{payment.paymentMethod.replace('_', ' ')}</TableCell>
-                        <TableCell className="text-muted-foreground">{payment.notes || '—'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="border-b px-6 py-4">
               <CardTitle className="text-lg">Square Payments</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -663,6 +630,41 @@ export default function ClientDetail() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{payment.description || '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="border-b px-6 py-4">
+              <CardTitle className="text-lg">Payment History</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {manualPaymentsLoading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading payments...</div>
+              ) : !manualPayments?.length ? (
+                <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
+                  No manual payments logged for this client.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-6">Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {manualPayments.map(payment => (
+                      <TableRow key={payment.id}>
+                        <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), 'MMM d, yyyy') : '—'}</TableCell>
+                        <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
+                        <TableCell className="capitalize">{payment.paymentMethod.replace('_', ' ')}</TableCell>
+                        <TableCell className="text-muted-foreground">{payment.notes || '—'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
