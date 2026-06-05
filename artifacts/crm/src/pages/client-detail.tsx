@@ -37,10 +37,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
 import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
+import { safeFormatDate, toDateInputValue } from "@/lib/utils";
 
 const METHOD_LABELS: Record<string, string> = {
   cash: "Cash",
@@ -288,7 +288,7 @@ export default function ClientDetail() {
     setEditingRental(rental);
     editRentalForm.reset({
       unitDescription: rental.unitDescription ?? "",
-      startDate: rental.startDate ? new Date(rental.startDate).toISOString().split("T")[0] : "",
+      startDate: toDateInputValue(rental.startDate),
       endDate: rental.endDate ? rental.endDate.substring(0, 7) : "",
       termMonths: rental.termMonths,
       monthlyRate: rental.monthlyRate ?? 0,
@@ -543,8 +543,8 @@ export default function ClientDetail() {
                       <TableRow key={rental.id}>
                         <TableCell className="px-6 font-medium">{rental.machineCode || "—"}</TableCell>
                         <TableCell>{rental.brand || "—"}</TableCell>
-                        <TableCell>{rental.startDate ? format(new Date(rental.startDate), "MMM d, yyyy") : "—"}</TableCell>
-                        <TableCell>{rental.endDate ? format(new Date(rental.endDate), "MMM yyyy") : "—"}</TableCell>
+                        <TableCell>{safeFormatDate(rental.startDate, "MMM d, yyyy")}</TableCell>
+                        <TableCell>{safeFormatDate(rental.endDate, "MMM yyyy")}</TableCell>
                         <TableCell>
                           {!rental.endDate ? (
                             <span className="text-muted-foreground">Month-to-month</span>
@@ -651,7 +651,7 @@ export default function ClientDetail() {
                             <FileText className="h-4 w-4 text-muted-foreground" />
                             {agreement.fileName}
                           </TableCell>
-                          <TableCell>{agreement.createdAt ? format(new Date(agreement.createdAt), "MMM d, yyyy") : "—"}</TableCell>
+                          <TableCell>{safeFormatDate(agreement.createdAt, "MMM d, yyyy")}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="sm" asChild>
                               <a href={fileUrl} target="_blank" rel="noopener noreferrer">
@@ -765,7 +765,7 @@ export default function ClientDetail() {
                   <TableBody>
                     {sortedPayments.map((payment) => (
                       <TableRow key={payment.id}>
-                        <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), "MMM d, yyyy") : "—"}</TableCell>
+                        <TableCell className="px-6">{safeFormatDate(payment.paymentDate, "MMM d, yyyy")}</TableCell>
                         <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
                         <TableCell>{METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod}</TableCell>
                         <TableCell className="text-muted-foreground">{payment.notes || "—"}</TableCell>
@@ -918,7 +918,7 @@ export default function ClientDetail() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                             <Clock className="h-3 w-3" />
-                            {log.occurredAt ? format(new Date(log.occurredAt), "MMM d, yyyy 'at' h:mm a") : "—"}
+                            {safeFormatDate(log.occurredAt, "MMM d, yyyy 'at' h:mm a")}
                           </div>
                           {log.notes ? (
                             <p className="text-sm whitespace-pre-wrap">{log.notes}</p>
