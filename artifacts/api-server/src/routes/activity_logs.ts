@@ -26,7 +26,7 @@ function formatLog(row: typeof activityLogsTable.$inferSelect) {
 // ── GET /clients/:id/activity-logs ─────────────────────────────────────────
 
 router.get("/clients/:id/activity-logs", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const clientId = Number(req.params.id);
@@ -54,7 +54,7 @@ router.get("/clients/:id/activity-logs", async (req, res) => {
 // ── POST /clients/:id/activity-logs ────────────────────────────────────────
 
 router.post("/clients/:id/activity-logs", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const clientId = Number(req.params.id);
@@ -95,7 +95,7 @@ router.post("/clients/:id/activity-logs", async (req, res) => {
 // ── DELETE /clients/:id/activity-logs/:logId ───────────────────────────────
 
 router.delete("/clients/:id/activity-logs/:logId", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const clientId = Number(req.params.id);

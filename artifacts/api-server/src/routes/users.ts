@@ -17,7 +17,7 @@ const CreateUserBody = z.object({
 // ── GET /users — list all users in the current tenant ──────────────────────
 
 router.get("/users", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const users = await db
@@ -36,7 +36,7 @@ router.get("/users", async (req, res) => {
 // ── POST /users — create a user and assign to current tenant ───────────────
 
 router.post("/users", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const parsed = CreateUserBody.safeParse(req.body);
@@ -83,7 +83,7 @@ router.post("/users", async (req, res) => {
 // ── DELETE /users/:id — remove a user from the tenant ─────────────────────
 
 router.delete("/users/:id", async (req, res) => {
-  const tenantId = requireTenant(req, res);
+  const tenantId = await requireTenant(req, res);
   if (tenantId === null) return;
 
   const targetId = req.params.id;

@@ -470,7 +470,9 @@ export default function ClientDetail() {
                           <TableCell>{rental.endDate ? format(new Date(rental.endDate), 'MMM yyyy') : '—'}</TableCell>
                           <TableCell>{rental.termMonths} mo</TableCell>
                           <TableCell>
-                            {rental.monthsRemaining <= 2 ? (
+                            {rental.monthsRemaining == null ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : rental.monthsRemaining <= 2 ? (
                               <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
                                 {rental.monthsRemaining} mo
                               </Badge>
@@ -663,7 +665,7 @@ export default function ClientDetail() {
                       <TableRow key={payment.id}>
                         <TableCell className="px-6">{payment.paymentDate ? format(new Date(payment.paymentDate), 'MMM d, yyyy') : '—'}</TableCell>
                         <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
-                        <TableCell className="capitalize">{payment.paymentMethod.replace('_', ' ')}</TableCell>
+                        <TableCell className="capitalize">{(payment.paymentMethod ?? '').replace('_', ' ')}</TableCell>
                         <TableCell className="text-muted-foreground">{payment.notes || '—'}</TableCell>
                       </TableRow>
                     ))}
