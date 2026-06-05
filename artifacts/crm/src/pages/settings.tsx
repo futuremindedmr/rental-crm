@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { safeFormatDate } from "@/lib/utils";
 
 // ── Migration types ────────────────────────────────────────────────────────
 
@@ -636,7 +636,7 @@ export default function Settings() {
             {connected && squareStatus?.lastSyncAt && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
-                Last synced {format(new Date(squareStatus.lastSyncAt), "MMM d, yyyy 'at' h:mm a")}
+                Last synced {safeFormatDate(squareStatus.lastSyncAt, "MMM d, yyyy 'at' h:mm a")}
               </div>
             )}
           </div>

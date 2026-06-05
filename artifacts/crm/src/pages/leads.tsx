@@ -11,7 +11,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { format } from "date-fns";
+import { safeFormatDate } from "@/lib/utils";
 
 const stages = [
   { id: "contacted", label: "Contacted", color: "bg-blue-100 border-blue-200 text-blue-900" },
@@ -205,7 +205,7 @@ export default function Leads() {
                               </div>
                             )}
                             <div className="mt-3 text-[10px] text-muted-foreground text-right">
-                              {lead.createdAt ? format(new Date(lead.createdAt), 'MMM d, yyyy') : ''}
+                              {safeFormatDate(lead.createdAt, 'MMM d, yyyy', '')}
                             </div>
                           </Link>
                         </CardContent>

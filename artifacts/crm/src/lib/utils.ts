@@ -40,3 +40,19 @@ export function toDateInputValue(
   if (isNaN(date.getTime())) return fallback
   return date.toISOString().split("T")[0]
 }
+
+/**
+ * Formats a possibly-null/undefined/non-numeric value as a fixed-decimal
+ * string. Returns `fallback` when the value can't be parsed to a finite
+ * number, so number formatting in render never throws or shows "NaN".
+ */
+export function safeToFixed(
+  value: number | string | null | undefined,
+  digits = 2,
+  fallback = "0.00",
+): string {
+  if (value === null || value === undefined || value === "") return fallback
+  const num = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(num)) return fallback
+  return num.toFixed(digits)
+}

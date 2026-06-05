@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { safeFormatDate, safeToFixed } from "@/lib/utils";
 import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 
 const METHOD_LABELS: Record<string, string> = {
@@ -338,7 +338,7 @@ export default function Payments() {
                   <TableCell className="font-medium">{row.clientName ?? "—"}</TableCell>
                   <TableCell>{row.label}</TableCell>
                   <TableCell>
-                    {row.date ? format(new Date(row.date), "MMM d, yyyy") : "—"}
+                    {safeFormatDate(row.date, "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
                     {row.kind === "square" ? (
@@ -355,7 +355,7 @@ export default function Payments() {
                     {row.kind === "manual" ? (row.notes || "—") : "—"}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    ${row.amount.toFixed(2)}
+                    ${safeToFixed(row.amount)}
                   </TableCell>
                   <TableCell>
                     {row.kind === "manual" && (

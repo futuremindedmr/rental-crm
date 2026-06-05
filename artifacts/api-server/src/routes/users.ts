@@ -104,12 +104,12 @@ router.delete("/users/:id", async (req, res) => {
     return;
   }
 
-  const [{ n }] = await db
+  const [countRow] = await db
     .select({ n: count() })
     .from(usersTable)
     .where(eq(usersTable.tenantId, tenantId));
 
-  if (Number(n) <= 1) {
+  if (Number(countRow?.n ?? 0) <= 1) {
     res.status(400).json({ error: "Cannot remove the last user in this account." });
     return;
   }

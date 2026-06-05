@@ -40,7 +40,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
-import { safeFormatDate, toDateInputValue } from "@/lib/utils";
+import { safeFormatDate, safeToFixed, toDateInputValue } from "@/lib/utils";
 
 const METHOD_LABELS: Record<string, string> = {
   cash: "Cash",
@@ -556,7 +556,7 @@ export default function ClientDetail() {
                             <span>{rental.monthsRemaining} mo</span>
                           )}
                         </TableCell>
-                        <TableCell>${rental.monthlyRate?.toFixed(2)}/mo</TableCell>
+                        <TableCell>${safeToFixed(rental.monthlyRate)}/mo</TableCell>
                         <TableCell>
                           {rental.paymentStatus ? (
                             <Badge variant="outline" className="capitalize">{rental.paymentStatus}</Badge>
@@ -766,7 +766,7 @@ export default function ClientDetail() {
                     {sortedPayments.map((payment) => (
                       <TableRow key={payment.id}>
                         <TableCell className="px-6">{safeFormatDate(payment.paymentDate, "MMM d, yyyy")}</TableCell>
-                        <TableCell className="font-medium">${Number(payment.amount).toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">${safeToFixed(payment.amount)}</TableCell>
                         <TableCell>{METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod}</TableCell>
                         <TableCell className="text-muted-foreground">{payment.notes || "—"}</TableCell>
                         <TableCell className="text-right">

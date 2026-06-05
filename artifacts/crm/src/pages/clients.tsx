@@ -13,6 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { safeFormatDate } from "@/lib/utils";
 import { Search, Download, Upload } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -205,7 +206,7 @@ export default function Clients() {
       c.email ?? "",
       c.propertyName ?? "",
       c.activeRentalCount,
-      c.createdAt ? format(new Date(c.createdAt), "yyyy-MM-dd") : "",
+      safeFormatDate(c.createdAt, "yyyy-MM-dd", ""),
     ]);
     const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -476,7 +477,7 @@ export default function Clients() {
                   <TableCell className="text-sm">{client.propertyName || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>{client.activeRentalCount}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {client.createdAt ? format(new Date(client.createdAt), 'MMM d, yyyy') : ''}
+                    {safeFormatDate(client.createdAt, 'MMM d, yyyy', '')}
                   </TableCell>
                 </TableRow>
               ))

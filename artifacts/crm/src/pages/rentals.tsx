@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListClients } from "@workspace/api-client-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, safeFormatDate, safeToFixed } from "@/lib/utils";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 type SortCol = "machine" | "renter" | "startDate" | "endDate" | "term" | "monthlyRate";
@@ -295,7 +295,7 @@ export default function Rentals() {
                     <span className="text-sm text-muted-foreground">{rental.clientName || "—"}</span>
                   </TableCell>
                   <TableCell>
-                    {rental.startDate ? format(new Date(rental.startDate), 'MMM d, yyyy') : ''}
+                    {safeFormatDate(rental.startDate, 'MMM d, yyyy', '')}
                   </TableCell>
                   <TableCell>{formatEndDate(rental.endDate)}</TableCell>
                   <TableCell>{rental.termMonths} mo</TableCell>
@@ -313,7 +313,7 @@ export default function Rentals() {
                     )}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    ${rental.monthlyRate?.toFixed(2)}
+                    ${safeToFixed(rental.monthlyRate)}
                   </TableCell>
                   <TableCell>
                     <PaymentStatusBadge status={rental.paymentStatus} />

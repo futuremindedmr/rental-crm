@@ -1,9 +1,10 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetCurrentTenant, getGetCurrentTenantQueryKey } from "@workspace/api-client-react";
 
@@ -24,6 +25,7 @@ const queryClient = new QueryClient();
 function MainApp() {
   const { isLoading, isAuthenticated, refetch } = useAuth();
   const qc = useQueryClient();
+  const [location] = useLocation();
   const { data: tenantEnvelope, isLoading: tenantLoading } = useGetCurrentTenant({
     query: { enabled: isAuthenticated, queryKey: getGetCurrentTenantQueryKey() },
   });
@@ -51,18 +53,20 @@ function MainApp() {
 
   return (
     <Layout tenantName={tenant.name}>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/clients" component={Clients} />
-        <Route path="/clients/:id" component={ClientDetail} />
-        <Route path="/properties" component={Properties} />
-        <Route path="/leads" component={Leads} />
-        <Route path="/rentals" component={Rentals} />
-        <Route path="/inventory" component={Inventory} />
-        <Route path="/payments" component={Payments} />
-        <Route path="/settings" component={Settings} />
-        <Route component={NotFound} />
-      </Switch>
+      <ErrorBoundary resetKey={location}>
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/clients" component={Clients} />
+          <Route path="/clients/:id" component={ClientDetail} />
+          <Route path="/properties" component={Properties} />
+          <Route path="/leads" component={Leads} />
+          <Route path="/rentals" component={Rentals} />
+          <Route path="/inventory" component={Inventory} />
+          <Route path="/payments" component={Payments} />
+          <Route path="/settings" component={Settings} />
+          <Route component={NotFound} />
+        </Switch>
+      </ErrorBoundary>
     </Layout>
   );
 }

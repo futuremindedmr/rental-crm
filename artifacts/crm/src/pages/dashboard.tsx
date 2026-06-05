@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
-import { format } from "date-fns";
 import { Activity, AlertTriangle, DollarSign, Users, Target, Building2, AlertCircle, GripVertical, ChevronDown, CalendarClock, RefreshCw, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +25,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@/lib/utils";
+import { cn, safeFormatDate, safeToFixed } from "@/lib/utils";
 
 const CARD_ORDER_KEY = "dashboard-card-order";
 const METRICS_COLLAPSED_KEY = "dashboard-metrics-collapsed";
@@ -301,7 +300,7 @@ export default function Dashboard() {
               <span className="font-medium">Square connected</span>
               {squareStatus.lastSyncAt && (
                 <span className="text-green-700/70">
-                  · Last synced {format(new Date(squareStatus.lastSyncAt), "MMM d 'at' h:mm a")}
+                  · Last synced {safeFormatDate(squareStatus.lastSyncAt, "MMM d 'at' h:mm a")}
                 </span>
               )}
             </div>
@@ -470,7 +469,7 @@ export default function Dashboard() {
                   {recentPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="text-sm">
-                        {payment.paymentDate ? format(new Date(payment.paymentDate), "MMM d, yyyy") : "—"}
+                        {safeFormatDate(payment.paymentDate, "MMM d, yyyy")}
                       </TableCell>
                       <TableCell className="font-medium">
                         <Link href={`/clients/${payment.clientId}`} className="hover:underline text-primary">
@@ -486,7 +485,7 @@ export default function Dashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${(payment.amount / 100).toFixed(2)}
+                        ${safeToFixed(payment.amount != null ? payment.amount / 100 : null)}
                       </TableCell>
                     </TableRow>
                   ))}

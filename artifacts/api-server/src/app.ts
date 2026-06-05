@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -36,5 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+app.use("/api", notFoundHandler);
+app.use(errorHandler);
 
 export default app;

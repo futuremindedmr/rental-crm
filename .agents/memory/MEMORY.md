@@ -2,3 +2,4 @@
 - [TS project references](ts-project-references.md) — referenced libs need composite + root-tsconfig reference, else leaf typecheck dies (TS6306/6305) and hides real artifact errors.
 - [requireTenant must be awaited](require-tenant-await.md) — requireTenant() is async; missing await causes [object Promise] as tenantId in DB queries → 500 errors.
 - [date-fns invalid-date crash](date-fns-invalid-date-crash.md) — format(new Date(x)) throws on corrupted text date columns and crashes whole page; use safeFormatDate/toDateInputValue helpers.
+- [Express 5 central error handling + RN error boundary](express5-central-error-handling.md) — Express 5 auto-forwards async errors to one errorHandler (no per-handler try/catch); CRM wraps routes in ErrorBoundary + safe render helpers.

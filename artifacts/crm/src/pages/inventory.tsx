@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
 import { Star } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeToFixed } from "@/lib/utils";
 
 function StarRating({ score }: { score: number | null | undefined }) {
   if (!score) return <span className="text-muted-foreground text-xs">—</span>;
@@ -116,7 +116,7 @@ export default function Inventory() {
                   </TableCell>
                   <TableCell>
                     {rental.costOfMachine != null
-                      ? `$${Number(rental.costOfMachine).toFixed(2)}`
+                      ? `$${safeToFixed(rental.costOfMachine)}`
                       : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
