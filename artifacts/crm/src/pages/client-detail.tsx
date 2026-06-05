@@ -7,6 +7,7 @@ import {
   useCreateRental,
   useUpdateRental,
   useDeleteRental,
+  useRenewRental,
   useListAgreements,
   useCreateAgreement,
   useDeleteAgreement,
@@ -37,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import { safeFormatDate, safeToFixed, toDateInputValue } from "@/lib/utils";
@@ -73,6 +74,13 @@ const rentalFormSchema = z.object({
   machineStatus: z.enum(["installed", "in_storage"]).optional(),
 });
 
+const renewalFormSchema = z.object({
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional().or(z.literal("")),
+  termMonths: z.coerce.number().min(1, "Term is required"),
+  monthlyRate: z.coerce.number().min(0, "Rate must be positive"),
+});
+
 const paymentFormSchema = z.object({
   amount: z.coerce.number().positive("Amount must be positive"),
   paymentDate: z.string().min(1, "Date is required"),
@@ -104,6 +112,8 @@ export default function ClientDetail() {
   const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
   const [editRentalDialogOpen, setEditRentalDialogOpen] = useState(false);
   const [editingRental, setEditingRental] = useState<Rental | null>(null);
+  const [renewDialogOpen, setRenewDialogOpen] = useState(false);
+  const [renewingRental, setRenewingRental] = useState<Rental | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -122,6 +132,8 @@ export default function ClientDetail() {
     { clientId },
     { query: { enabled: !!clientId, queryKey: getListRentalsQueryKey({ clientId }) } },
   );
+  const activeRentals = (rentals ?? []).filter((r) => !r.archived);
+  const historyRentals = (rentals ?? []).filter((r) => r.archived);
   const { data: agreements, isLoading: agreementsLoading } = useListAgreements(clientId, {
     query: { enabled: !!clientId, queryKey: getListAgreementsQueryKey(clientId) },
   });
@@ -138,6 +150,7 @@ export default function ClientDetail() {
   const createRentalMutation = useCreateRental();
   const updateRentalMutation = useUpdateRental();
   const deleteRentalMutation = useDeleteRental();
+  const renewRentalMutation = useRenewRental();
   const createAgreementMutation = useCreateAgreement();
   const deleteAgreementMutation = useDeleteAgreement();
   const createPaymentMutation = useCreateManualPayment();
@@ -190,6 +203,16 @@ export default function ClientDetail() {
     },
   });
 
+  const renewForm = useForm<z.infer<typeof renewalFormSchema>>({
+    resolver: zodResolver(renewalFormSchema),
+    defaultValues: {
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: "",
+      termMonths: 12,
+      monthlyRate: 0,
+    },
+  });
+
   const paymentForm = useForm<z.infer<typeof paymentFormSchema>>({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
@@ -235,7 +258,7 @@ export default function ClientDetail() {
           ...data,
           clientId,
           startDate: new Date(data.startDate).toISOString(),
-          endDate: data.endDate ? data.endDate + "-01" : undefined,
+          endDate: data.endDate || undefined,
           machineCode: data.machineCode || undefined,
           brand: data.brand || undefined,
           costOfMachine: !isNaN(costOfMachine as number) ? costOfMachine : undefined,
@@ -263,7 +286,7 @@ export default function ClientDetail() {
         data: {
           unitDescription: data.unitDescription,
           startDate: new Date(data.startDate).toISOString(),
-          endDate: data.endDate ? data.endDate + "-01" : null,
+          endDate: data.endDate || null,
           termMonths: data.termMonths,
           monthlyRate: data.monthlyRate,
           machineCode: data.machineCode || null,
@@ -289,7 +312,7 @@ export default function ClientDetail() {
     editRentalForm.reset({
       unitDescription: rental.unitDescription ?? "",
       startDate: toDateInputValue(rental.startDate),
-      endDate: rental.endDate ? rental.endDate.substring(0, 7) : "",
+      endDate: rental.endDate ? toDateInputValue(rental.endDate) : "",
       termMonths: rental.termMonths,
       monthlyRate: rental.monthlyRate ?? 0,
       machineCode: rental.machineCode ?? "",
@@ -300,6 +323,39 @@ export default function ClientDetail() {
       machineStatus: (rental.machineStatus as "installed" | "in_storage") ?? "installed",
     });
     setEditRentalDialogOpen(true);
+  };
+
+  const openRenewRental = (rental: Rental) => {
+    setRenewingRental(rental);
+    renewForm.reset({
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: "",
+      termMonths: rental.termMonths,
+      monthlyRate: rental.monthlyRate ?? 0,
+    });
+    setRenewDialogOpen(true);
+  };
+
+  const onRenewSubmit = (data: z.infer<typeof renewalFormSchema>) => {
+    if (!renewingRental) return;
+    renewRentalMutation.mutate(
+      {
+        id: renewingRental.id,
+        data: {
+          startDate: new Date(data.startDate).toISOString(),
+          endDate: data.endDate || undefined,
+          termMonths: data.termMonths,
+          monthlyRate: data.monthlyRate,
+        },
+      },
+      {
+        onSuccess: () => {
+          setRenewDialogOpen(false);
+          setRenewingRental(null);
+          queryClient.invalidateQueries({ queryKey: getListRentalsQueryKey({ clientId }) });
+        },
+      },
+    );
   };
 
   const onPaymentSubmit = (data: z.infer<typeof paymentFormSchema>) => {
@@ -448,7 +504,7 @@ export default function ClientDetail() {
                       <FormField control={rentalForm.control} name="endDate" render={({ field }) => (
                         <FormItem>
                           <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
-                          <FormControl><Input type="month" {...field} /></FormControl>
+                          <FormControl><Input type="date" {...field} /></FormControl>
                           <p className="text-xs text-muted-foreground">Leave blank for month-to-month.</p>
                           <FormMessage />
                         </FormItem>
@@ -520,9 +576,9 @@ export default function ClientDetail() {
             <CardContent className="p-0">
               {rentalsLoading ? (
                 <div className="p-8 text-center text-muted-foreground">Loading rentals...</div>
-              ) : !rentals?.length ? (
+              ) : !activeRentals.length ? (
                 <div className="p-12 text-center text-muted-foreground border-dashed border-t m-4 rounded-md">
-                  No rentals for this client.
+                  No active rentals for this client.
                 </div>
               ) : (
                 <Table>
@@ -539,15 +595,15 @@ export default function ClientDetail() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rentals.map((rental) => (
+                    {activeRentals.map((rental) => (
                       <TableRow key={rental.id}>
                         <TableCell className="px-6 font-medium">{rental.machineCode || "—"}</TableCell>
                         <TableCell>{rental.brand || "—"}</TableCell>
                         <TableCell>{safeFormatDate(rental.startDate, "MMM d, yyyy")}</TableCell>
-                        <TableCell>{safeFormatDate(rental.endDate, "MMM yyyy")}</TableCell>
+                        <TableCell>{rental.endDate ? safeFormatDate(rental.endDate, "MMM d, yyyy") : "—"}</TableCell>
                         <TableCell>
-                          {!rental.endDate ? (
-                            <span className="text-muted-foreground">Month-to-month</span>
+                          {!rental.endDate || rental.isMonthToMonth ? (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground">Month-to-Month</Badge>
                           ) : rental.monthsRemaining == null ? (
                             <span className="text-muted-foreground">—</span>
                           ) : rental.monthsRemaining <= 2 ? (
@@ -564,7 +620,10 @@ export default function ClientDetail() {
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => openRenewRental(rental)}>
+                            <RefreshCw className="h-4 w-4 mr-1" /> Renew
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => openEditRental(rental)}>
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -588,6 +647,36 @@ export default function ClientDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+
+              {historyRentals.length > 0 && (
+                <div className="border-t mt-2">
+                  <div className="px-6 py-3 text-sm font-semibold text-muted-foreground">Rental History</div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="px-6">Machine Code</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Term</TableHead>
+                        <TableHead>Monthly Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historyRentals.map((rental) => (
+                        <TableRow key={rental.id} className="text-muted-foreground">
+                          <TableCell className="px-6 font-medium">{rental.machineCode || "—"}</TableCell>
+                          <TableCell>{rental.brand || "—"}</TableCell>
+                          <TableCell>{safeFormatDate(rental.startDate, "MMM d, yyyy")}</TableCell>
+                          <TableCell>{rental.endDate ? safeFormatDate(rental.endDate, "MMM d, yyyy") : "—"}</TableCell>
+                          <TableCell>{rental.termMonths} mo</TableCell>
+                          <TableCell>${safeToFixed(rental.monthlyRate)}/mo</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -966,7 +1055,7 @@ export default function ClientDetail() {
               <FormField control={editRentalForm.control} name="endDate" render={({ field }) => (
                 <FormItem>
                   <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
-                  <FormControl><Input type="month" {...field} /></FormControl>
+                  <FormControl><Input type="date" {...field} /></FormControl>
                   <p className="text-xs text-muted-foreground">Leave blank for month-to-month.</p>
                   <FormMessage />
                 </FormItem>
@@ -1029,6 +1118,46 @@ export default function ClientDetail() {
               </div>
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={updateRentalMutation.isPending}>Save Changes</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Renew rental ───────────────────────────────────────── */}
+      <Dialog open={renewDialogOpen} onOpenChange={setRenewDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Renew Rental</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Starts a new rental term for{" "}
+            <strong>{renewingRental?.machineCode || renewingRental?.unitDescription || "this machine"}</strong>.
+            Machine details carry over; the current rental moves to history.
+          </p>
+          <Form {...renewForm}>
+            <form onSubmit={renewForm.handleSubmit(onRenewSubmit)} className="space-y-4">
+              <FormField control={renewForm.control} name="startDate" render={({ field }) => (
+                <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={renewForm.control} name="endDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <p className="text-xs text-muted-foreground">Leave blank for month-to-month.</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={renewForm.control} name="termMonths" render={({ field }) => (
+                  <FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={renewForm.control} name="monthlyRate" render={({ field }) => (
+                  <FormItem><FormLabel>Monthly Rate ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={renewRentalMutation.isPending}>
+                  {renewRentalMutation.isPending ? "Renewing..." : "Renew Rental"}
+                </Button>
               </div>
             </form>
           </Form>

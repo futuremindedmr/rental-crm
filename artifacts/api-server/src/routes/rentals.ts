@@ -9,6 +9,8 @@ import {
   UpdateRentalParams,
   UpdateRentalBody,
   DeleteRentalParams,
+  RenewRentalParams,
+  RenewRentalBody,
 } from "@workspace/api-zod";
 import { requireTenant } from "../lib/tenant";
 
@@ -60,6 +62,7 @@ function formatRental(
     conditionScore: number | null;
     machineStatus: string | null;
     notes: string | null;
+    archived: boolean | null;
     createdAt: Date;
   },
   paymentStatus: string | null = null,
@@ -72,6 +75,7 @@ function formatRental(
     monthsRemaining,
     isExpiringSoon: computeIsExpiringSoon(row.endDate),
     isMonthToMonth: computeIsMonthToMonth(row.startDate, row.termMonths, row.endDate),
+    archived: row.archived ?? false,
     createdAt: row.createdAt.toISOString(),
     paymentStatus,
   };
@@ -155,6 +159,7 @@ router.get("/rentals", async (req, res) => {
       conditionScore: rentalsTable.conditionScore,
       machineStatus: rentalsTable.machineStatus,
       notes: rentalsTable.notes,
+      archived: rentalsTable.archived,
       createdAt: rentalsTable.createdAt,
     })
     .from(rentalsTable)
@@ -216,6 +221,7 @@ router.get("/rentals/:id", async (req, res) => {
       conditionScore: rentalsTable.conditionScore,
       machineStatus: rentalsTable.machineStatus,
       notes: rentalsTable.notes,
+      archived: rentalsTable.archived,
       createdAt: rentalsTable.createdAt,
     })
     .from(rentalsTable)
@@ -255,6 +261,64 @@ router.patch("/rentals/:id", async (req, res) => {
   res.json(formatRental(
     { ...updated, clientName: client?.name ?? null },
     paymentStatusMap.get(updated.clientId) ?? null,
+  ));
+});
+
+router.post("/rentals/:id/renew", async (req, res) => {
+  const tenantId = await requireTenant(req, res);
+  if (tenantId === null) return;
+
+  const paramParsed = RenewRentalParams.safeParse({ id: Number(req.params.id) });
+  if (!paramParsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
+  const bodyParsed = RenewRentalBody.safeParse(req.body);
+  if (!bodyParsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
+
+  const [existing] = await db
+    .select()
+    .from(rentalsTable)
+    .where(and(eq(rentalsTable.id, paramParsed.data.id), eq(rentalsTable.tenantId, tenantId)))
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+
+  const { startDate, endDate, termMonths, monthlyRate } = bodyParsed.data;
+
+  const renewed = await db.transaction(async (tx) => {
+    const [inserted] = await tx.insert(rentalsTable).values({
+      tenantId,
+      clientId: existing.clientId,
+      unitDescription: existing.unitDescription,
+      machineCode: existing.machineCode,
+      brand: existing.brand,
+      costOfMachine: existing.costOfMachine,
+      paidOff: existing.paidOff,
+      conditionScore: existing.conditionScore,
+      machineStatus: existing.machineStatus,
+      notes: existing.notes,
+      startDate,
+      endDate: endDate ?? null,
+      termMonths,
+      monthlyRate: String(monthlyRate),
+      archived: false,
+    }).returning();
+
+    await tx
+      .update(rentalsTable)
+      .set({ archived: true })
+      .where(and(eq(rentalsTable.id, existing.id), eq(rentalsTable.tenantId, tenantId)));
+
+    return inserted;
+  });
+
+  const [client] = await db
+    .select()
+    .from(clientsTable)
+    .where(and(eq(clientsTable.id, renewed.clientId), eq(clientsTable.tenantId, tenantId)))
+    .limit(1);
+  const paymentStatusMap = await fetchPaymentStatusMap([renewed.clientId], tenantId);
+
+  res.status(201).json(formatRental(
+    { ...renewed, clientName: client?.name ?? null },
+    paymentStatusMap.get(renewed.clientId) ?? null,
   ));
 });
 

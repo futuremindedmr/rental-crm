@@ -50,6 +50,7 @@ export * from './rental';
 export * from './rentalAgreement';
 export * from './rentalInput';
 export * from './rentalInputMachineStatus';
+export * from './rentalRenewInput';
 export * from './rentalUpdate';
 export * from './squareInvoice';
 export * from './squareOAuthStartResponse';

@@ -428,6 +428,7 @@ export const ListRentalsResponseItem = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
+  "archived": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -491,6 +492,7 @@ export const GetRentalResponse = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
+  "archived": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -548,6 +550,7 @@ export const UpdateRentalResponse = zod.object({
   "monthsRemaining": zod.number(),
   "isExpiringSoon": zod.boolean(),
   "isMonthToMonth": zod.boolean(),
+  "archived": zod.boolean(),
   "notes": zod.string().nullish(),
   "paymentStatus": zod.string().nullish(),
   "createdAt": zod.string()
@@ -559,6 +562,28 @@ export const UpdateRentalResponse = zod.object({
  */
 export const DeleteRentalParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * Creates a new active rental that copies the machine details of the existing rental with new term details, and archives the original rental into rental history.
+
+ * @summary Renew a rental
+ */
+export const RenewRentalParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const renewRentalBodyMonthlyRateMin = 0;
+
+
+
+export const RenewRentalBody = zod.object({
+  "startDate": zod.string(),
+  "endDate": zod.string().optional(),
+  "termMonths": zod.number().min(1),
+  "monthlyRate": zod.number().min(renewRentalBodyMonthlyRateMin)
 })
 
 

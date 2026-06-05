@@ -18,6 +18,7 @@ export const rentalsTable = pgTable("rentals", {
   conditionScore: integer("condition_score"),
   machineStatus: text("machine_status").default("installed"),
   notes: text("notes"),
+  archived: boolean("archived").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

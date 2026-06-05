@@ -80,7 +80,7 @@ router.get("/clients", async (req, res) => {
       cnt: sql<number>`count(*)::int`,
     })
     .from(rentalsTable)
-    .where(eq(rentalsTable.tenantId, tenantId))
+    .where(and(eq(rentalsTable.tenantId, tenantId), eq(rentalsTable.archived, false)))
     .groupBy(rentalsTable.clientId);
 
   const countMap = new Map(rentalCounts.map(r => [r.clientId, r.cnt]));
@@ -120,7 +120,7 @@ router.get("/clients/:id", async (req, res) => {
   const [countRow] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(rentalsTable)
-    .where(and(eq(rentalsTable.clientId, client.id), eq(rentalsTable.tenantId, tenantId)));
+    .where(and(eq(rentalsTable.clientId, client.id), eq(rentalsTable.tenantId, tenantId), eq(rentalsTable.archived, false)));
 
   res.json({ ...client, activeRentalCount: countRow?.cnt ?? 0, createdAt: client.createdAt.toISOString() });
 });
@@ -147,7 +147,7 @@ router.patch("/clients/:id", async (req, res) => {
   const [countRow] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(rentalsTable)
-    .where(and(eq(rentalsTable.clientId, updated.id), eq(rentalsTable.tenantId, tenantId)));
+    .where(and(eq(rentalsTable.clientId, updated.id), eq(rentalsTable.tenantId, tenantId), eq(rentalsTable.archived, false)));
 
   res.json({ ...updated, activeRentalCount: countRow?.cnt ?? 0, createdAt: updated.createdAt.toISOString() });
 });

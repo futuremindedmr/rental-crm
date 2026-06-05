@@ -571,6 +571,37 @@ paths:
         "204":
           description: Deleted
 
+  /rentals/{id}/renew:
+    post:
+      operationId: renewRental
+      tags: [rentals]
+      summary: Renew a rental
+      description: >
+        Creates a new active rental that copies the machine details of the
+        existing rental with new term details, and archives the original rental
+        into rental history.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RentalRenewInput"
+      responses:
+        "201":
+          description: Renewed rental (the new active rental)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "404":
+          description: Not found
+
   # ── Rental Agreements ─────────────────────────────────────────────────────
   /clients/{clientId}/agreements:
     get:
@@ -1087,7 +1118,7 @@ components:
     # ── Rental ───────────────────────────────────────────────────────────────
     Rental:
       type: object
-      required: [id, clientId, startDate, termMonths, monthlyRate, monthsRemaining, isExpiringSoon, isMonthToMonth, createdAt]
+      required: [id, clientId, startDate, termMonths, monthlyRate, monthsRemaining, isExpiringSoon, isMonthToMonth, archived, createdAt]
       properties:
         id:
           type: integer
@@ -1124,6 +1155,8 @@ components:
         isExpiringSoon:
           type: boolean
         isMonthToMonth:
+          type: boolean
+        archived:
           type: boolean
         notes:
           type: ["string", "null"]
@@ -1199,6 +1232,21 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+
+    RentalRenewInput:
+      type: object
+      required: [startDate, termMonths, monthlyRate]
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        termMonths:
+          type: integer
+          minimum: 1
+        monthlyRate:
+          type: number
+          minimum: 0
 
     # ── CSV Import ───────────────────────────────────────────────────────────
     ClientImportRow:

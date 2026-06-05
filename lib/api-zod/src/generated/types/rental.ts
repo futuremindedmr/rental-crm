@@ -37,6 +37,7 @@ export interface Rental {
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;
+  archived: boolean;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

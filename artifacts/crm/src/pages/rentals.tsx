@@ -116,7 +116,7 @@ export default function Rentals() {
       data: {
         ...rest,
         startDate: new Date(data.startDate).toISOString(),
-        endDate: endDate ? endDate + "-01" : undefined,
+        endDate: endDate || undefined,
       },
     }, {
       onSuccess: () => {
@@ -128,7 +128,7 @@ export default function Rentals() {
 
   const filteredRentals = useMemo(() => {
     if (!rentals) return [];
-    let list = rentals;
+    let list = rentals.filter((r) => !r.archived);
     if (filter === "mtm") list = list.filter((r) => r.isMonthToMonth);
     if (paymentFilter !== "all") list = list.filter((r) => r.paymentStatus === paymentFilter);
 
@@ -205,7 +205,7 @@ export default function Rentals() {
                 <FormField control={form.control} name="endDate" render={({ field }) => (
                   <FormItem>
                     <FormLabel>End Date <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
-                    <FormControl><Input type="month" {...field} /></FormControl>
+                    <FormControl><Input type="date" {...field} /></FormControl>
                     <p className="text-xs text-muted-foreground">
                       When set, this rental will appear in the Expiring Soon tab within 60 days of this date.
                     </p>

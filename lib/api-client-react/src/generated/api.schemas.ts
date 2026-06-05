@@ -211,6 +211,7 @@ export interface Rental {
   monthsRemaining: number;
   isExpiringSoon: boolean;
   isMonthToMonth: boolean;
+  archived: boolean;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
@@ -276,6 +277,15 @@ export interface RentalUpdate {
   machineStatus?: string | null;
   /** @nullable */
   notes?: string | null;
+}
+
+export interface RentalRenewInput {
+  startDate: string;
+  endDate?: string;
+  /** @minimum 1 */
+  termMonths: number;
+  /** @minimum 0 */
+  monthlyRate: number;
 }
 
 export interface ClientImportRow {

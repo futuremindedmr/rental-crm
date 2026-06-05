@@ -50,6 +50,7 @@ import type {
   Rental,
   RentalAgreement,
   RentalInput,
+  RentalRenewInput,
   RentalUpdate,
   SquareInvoice,
   SquareOAuthStartResponse,
@@ -2149,6 +2150,80 @@ export const useDeleteRental = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteRentalMutationOptions(options));
+    }
+
+export const getRenewRentalUrl = (id: number,) => {
+
+
+
+
+  return `/api/rentals/${id}/renew`
+}
+
+/**
+ * Creates a new active rental that copies the machine details of the existing rental with new term details, and archives the original rental into rental history.
+
+ * @summary Renew a rental
+ */
+export const renewRental = async (id: number,
+    rentalRenewInput: RentalRenewInput, options?: RequestInit): Promise<Rental> => {
+
+  return customFetch<Rental>(getRenewRentalUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      rentalRenewInput,)
+  }
+);}
+
+
+
+
+export const getRenewRentalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renewRental>>, TError,{id: number;data: BodyType<RentalRenewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof renewRental>>, TError,{id: number;data: BodyType<RentalRenewInput>}, TContext> => {
+
+const mutationKey = ['renewRental'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renewRental>>, {id: number;data: BodyType<RentalRenewInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  renewRental(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenewRentalMutationResult = NonNullable<Awaited<ReturnType<typeof renewRental>>>
+    export type RenewRentalMutationBody = BodyType<RentalRenewInput>
+    export type RenewRentalMutationError = ErrorType<void>
+
+    /**
+ * @summary Renew a rental
+ */
+export const useRenewRental = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renewRental>>, TError,{id: number;data: BodyType<RentalRenewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof renewRental>>,
+        TError,
+        {id: number;data: BodyType<RentalRenewInput>},
+        TContext
+      > => {
+      return useMutation(getRenewRentalMutationOptions(options));
     }
 
 export const getListAgreementsUrl = (clientId: number,) => {
