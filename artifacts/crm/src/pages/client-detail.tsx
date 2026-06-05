@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useGetClient,
   useUpdateClient,
@@ -117,6 +117,7 @@ export default function ClientDetail() {
   const [renewDialogOpen, setRenewDialogOpen] = useState(false);
   const [renewingRental, setRenewingRental] = useState<Rental | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const pendingObjectPath = useRef<string | null>(null);
 
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activityType, setActivityType] = useState<"Call" | "Text" | "Email" | "Visit">("Call");
@@ -729,13 +730,13 @@ export default function ClientDetail() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
                   });
-                  const { uploadURL } = await res.json();
+                  const { uploadURL, objectPath } = await res.json();
+                  pendingObjectPath.current = objectPath ?? null;
                   return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type } };
                 }}
                 onComplete={(result) => {
-                  const objectPath = result.successful?.[0]?.response?.body?.objectPath as
-                    | string
-                    | undefined;
+                  const objectPath = pendingObjectPath.current;
+                  pendingObjectPath.current = null;
                   const fileName = result.successful?.[0]?.name;
                   if (objectPath && fileName) {
                     createAgreementMutation.mutate(
