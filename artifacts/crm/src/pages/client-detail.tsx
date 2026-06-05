@@ -768,7 +768,7 @@ export default function ClientDetail() {
                   </TableHeader>
                   <TableBody>
                     {agreements.map((agreement) => {
-                      const fileUrl = `/api/storage/objects/${encodeURIComponent(agreement.objectPath)}`;
+                      const fileUrl = `/api/storage${agreement.objectPath}`;
                       return (
                         <TableRow key={agreement.id}>
                           <TableCell className="px-6 font-medium flex items-center gap-2">
@@ -783,7 +783,7 @@ export default function ClientDetail() {
                               </a>
                             </Button>
                             <Button variant="ghost" size="sm" asChild>
-                              <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
+                              <a href={fileUrl} target="_blank" rel="noopener noreferrer" download={agreement.fileName}>
                                 <Download className="h-4 w-4 mr-1.5" /> Download
                               </a>
                             </Button>
