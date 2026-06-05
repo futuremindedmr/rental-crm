@@ -115,11 +115,23 @@ export default function ClientDetail() {
     return now.toISOString().slice(0, 16);
   });
 
-  const { data: client, isLoading: clientLoading } = useGetClient(clientId, { query: { enabled: !!clientId } });
-  const { data: rentals, isLoading: rentalsLoading } = useListRentals({ clientId }, { query: { enabled: !!clientId } });
-  const { data: agreements, isLoading: agreementsLoading } = useListAgreements(clientId, { query: { enabled: !!clientId } });
-  const { data: manualPayments, isLoading: paymentsLoading } = useListManualPayments({ clientId }, { query: { enabled: !!clientId } });
-  const { data: activityLogs, isLoading: activityLogsLoading } = useListActivityLogs(clientId, { query: { enabled: !!clientId } });
+  const { data: client, isLoading: clientLoading } = useGetClient(clientId, {
+    query: { enabled: !!clientId, queryKey: getGetClientQueryKey(clientId) },
+  });
+  const { data: rentals, isLoading: rentalsLoading } = useListRentals(
+    { clientId },
+    { query: { enabled: !!clientId, queryKey: getListRentalsQueryKey({ clientId }) } },
+  );
+  const { data: agreements, isLoading: agreementsLoading } = useListAgreements(clientId, {
+    query: { enabled: !!clientId, queryKey: getListAgreementsQueryKey(clientId) },
+  });
+  const { data: manualPayments, isLoading: paymentsLoading } = useListManualPayments(
+    { clientId },
+    { query: { enabled: !!clientId, queryKey: getListManualPaymentsQueryKey({ clientId }) } },
+  );
+  const { data: activityLogs, isLoading: activityLogsLoading } = useListActivityLogs(clientId, {
+    query: { enabled: !!clientId, queryKey: getListActivityLogsQueryKey(clientId) },
+  });
 
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
@@ -598,11 +610,13 @@ export default function ClientDetail() {
                   return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type } };
                 }}
                 onComplete={(result) => {
-                  const objectPath = result.successful?.[0]?.response?.body?.objectPath;
+                  const objectPath = result.successful?.[0]?.response?.body?.objectPath as
+                    | string
+                    | undefined;
                   const fileName = result.successful?.[0]?.name;
                   if (objectPath && fileName) {
                     createAgreementMutation.mutate(
-                      { data: { clientId, objectPath, fileName } },
+                      { clientId, data: { objectPath, fileName } },
                       { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAgreementsQueryKey(clientId) }) },
                     );
                   }
@@ -656,7 +670,7 @@ export default function ClientDetail() {
                               onClick={() => {
                                 if (confirm("Are you sure you want to delete this file?")) {
                                   deleteAgreementMutation.mutate(
-                                    { id: agreement.id },
+                                    { clientId, id: agreement.id },
                                     { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAgreementsQueryKey(clientId) }) },
                                   );
                                 }
