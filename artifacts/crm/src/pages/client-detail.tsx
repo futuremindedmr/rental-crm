@@ -34,11 +34,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity, RefreshCw } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Download, Eye, FileText, Plus, Star, Phone, MessageSquare, Mail, MapPin, Clock, Activity, RefreshCw, MoreVertical, UserX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ObjectUploader } from "@workspace/object-storage-web";
 import { safeFormatDate, safeToFixed, toDateInputValue } from "@/lib/utils";
@@ -109,6 +110,7 @@ export default function ClientDetail() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
   const [editRentalDialogOpen, setEditRentalDialogOpen] = useState(false);
   const [editingRental, setEditingRental] = useState<Rental | null>(null);
@@ -247,6 +249,13 @@ export default function ClientDetail() {
     deleteClientMutation.mutate(
       { id: clientId },
       { onSuccess: () => setLocation("/clients") },
+    );
+  };
+
+  const onMarkInactive = () => {
+    updateClientMutation.mutate(
+      { id: clientId, data: { status: "past_customer" } },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetClientQueryKey(clientId) }) },
     );
   };
 
@@ -398,7 +407,7 @@ export default function ClientDetail() {
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
         {statusBadge(client.status)}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -447,6 +456,31 @@ export default function ClientDetail() {
               </Form>
             </DialogContent>
           </Dialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">More actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={onMarkInactive}
+                disabled={client.status === "past_customer" || updateClientMutation.isPending}
+              >
+                <UserX className="h-4 w-4 mr-2" /> Mark as Inactive
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => {
+                  setDeleteConfirmName("");
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Delete Client
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -1165,27 +1199,39 @@ export default function ClientDetail() {
       </Dialog>
 
       {/* ── Delete client ──────────────────────────────────────── */}
-      <div className="pt-12 border-t mt-12 flex justify-end">
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive">Delete Client</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmName(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Client</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
               This action cannot be undone. This will permanently delete <strong>{client.name}</strong> and remove all associated data, including rentals and payment history.
+            </p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Type <strong>{client.name}</strong> to confirm
+              </label>
+              <Input
+                value={deleteConfirmName}
+                onChange={(e) => setDeleteConfirmName(e.target.value)}
+                placeholder={client.name}
+                autoComplete="off"
+              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={onDeleteClient} disabled={deleteClientMutation.isPending}>
-                {deleteClientMutation.isPending ? "Deleting..." : "Yes, delete client"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={onDeleteClient}
+              disabled={deleteClientMutation.isPending || deleteConfirmName.trim() !== client.name}
+            >
+              {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
