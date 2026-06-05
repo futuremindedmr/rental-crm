@@ -339,7 +339,7 @@ router.post("/square/sync", async (req, res) => {
       for (const payment of data.payments ?? []) {
         const clientId = payment.customer_id ? squareCustomerIdMap.get(payment.customer_id) ?? null : null;
         const amount = payment.amount_money?.amount ?? 0;
-        const paymentDate = payment.created_at ? new Date(payment.created_at) : null;
+        const paymentDate = payment.created_at ?? new Date().toISOString();
 
         await db
           .insert(squarePaymentsTable)
@@ -406,7 +406,7 @@ router.post("/square/sync", async (req, res) => {
           const clientId = customerId ? squareCustomerIdMap.get(customerId) ?? null : null;
           const request = invoice.payment_requests?.[0];
           const amount = request?.computed_amount_money?.amount ?? 0;
-          const dueDate = request?.due_date ? new Date(request.due_date) : null;
+          const dueDate = request?.due_date ?? null;
 
           await db
             .insert(squareInvoicesTable)

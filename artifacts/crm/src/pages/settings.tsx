@@ -10,6 +10,7 @@ import {
   useStartSquareOAuth,
   useDisconnectSquare,
   getGetSquareStatusQueryKey,
+  getStartSquareOAuthQueryKey,
 } from "@workspace/api-client-react";
 import { RefreshCw, Link2, Link2Off, CheckCircle2, XCircle, Clock, ArrowRightLeft, AlertTriangle, ChevronDown, ChevronUp, Users, Trash2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -498,18 +499,25 @@ export default function Settings() {
 
   const { data: squareStatus, isLoading: squareLoading } = useGetSquareStatus();
   const syncSquare = useSyncSquare();
-  const startOAuth = useStartSquareOAuth();
+  const startOAuth = useStartSquareOAuth({
+    query: { enabled: false, queryKey: getStartSquareOAuthQueryKey(), gcTime: 0 },
+  });
   const disconnectSquare = useDisconnectSquare();
 
-  const handleConnect = () => {
-    startOAuth.mutate(undefined, {
-      onSuccess: (data) => { window.location.href = data.url; },
-      onError: (err) => toast({
+  const handleConnect = async () => {
+    const result = await startOAuth.refetch();
+    if (result.data?.url) {
+      window.location.href = result.data.url;
+    } else {
+      toast({
         title: "Cannot start Square connection",
-        description: err instanceof Error ? err.message : "Server error — check SQUARE_CLIENT_ID is set.",
+        description:
+          result.error instanceof Error
+            ? result.error.message
+            : "Server error — check SQUARE_CLIENT_ID is set.",
         variant: "destructive",
-      }),
-    });
+      });
+    }
   };
 
   const handleDisconnect = () => {
@@ -635,9 +643,9 @@ export default function Settings() {
 
           <div className="flex flex-wrap items-center gap-3">
             {!connected ? (
-              <Button onClick={handleConnect} disabled={startOAuth.isPending}>
+              <Button onClick={handleConnect} disabled={startOAuth.isFetching}>
                 <Link2 className="h-4 w-4 mr-2" />
-                {startOAuth.isPending ? "Redirecting…" : "Connect Square"}
+                {startOAuth.isFetching ? "Redirecting…" : "Connect Square"}
               </Button>
             ) : (
               <>
